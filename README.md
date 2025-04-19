@@ -10,9 +10,9 @@
 
 - **Fairy Companion** – Personal GPT‑powered avatar that asks reflective prompts and provides warm feedback.
 - **Voice‑first Journaling** – Record and transcribe your daily gratitude in one tap with ElevenLabs + Whisper.
-- **Calendar Heatmap** – Visual overview of streaks and past entries for habit reinforcement.citeturn0search0
+- **Calendar Heatmap** – Visual overview of streaks and past entries for habit reinforcement.
 - **Friend Peek** – View friends' entries (24 h window) only after you've posted yours, eliminating social pressure.
-- **Privacy‑by‑default** – Row‑Level‑Security on Supabase; only you and accepted friends can read your data.citeturn0search2
+- **Privacy‑by‑default** – Row‑Level‑Security on Supabase; only you and accepted friends can read your data.
 
 ---
 
@@ -20,13 +20,13 @@
 
 | Layer | Tool | Notes |
 |-------|------|-------|
-| Front‑end | **Next.js 14** (React) | `/app` dir, Server Actions, SWR for client fetch citeturn0search6 |
+| Front‑end | **Next.js 14** (React) | `/app` dir, Server Actions, SWR for client fetch |
 | Back‑end | **Supabase** | Postgres + Edge Functions + RLS policies |
 | Auth | Supabase OAuth | Google / LINE |
 | Storage | Supabase Storage | Audio blobs |
 | Voice AI | ElevenLabs API | TTS / STT |
-| Deployment | Vercel + GitHub | Auto‑preview on PRs citeturn0search3 |
-| CI / Hooks | GitHub Actions + Husky | Lint / build / test before merge citeturn0search5turn0search9 |
+| Deployment | Vercel + GitHub | Auto‑preview on PRs |
+| CI / Hooks | GitHub Actions + Husky | Lint / build / test before merge |
 
 ---
 
