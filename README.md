@@ -33,7 +33,7 @@
 ## 🚀 Quick Start
 
 ```bash
-git clone https://github.com/ahiboh-inc/terase.git
+git clone https://github.com/terra369/terase.git
 cd terase
 npm ci
 
@@ -89,4 +89,4 @@ Supabase migrations live under `supabase/migrations` and are version‑controlle
 
 ## 📄 License
 
-MIT © 2025 terase / ahiboh-inc
+MIT © 2025 terase / terra369
