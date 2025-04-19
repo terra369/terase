@@ -2,7 +2,7 @@
 
 ## terase
 
-> **Bring light to every day** – A gratitude‑journal SNS that pairs you with a personal fairy, captures your voice entries once a day, and lets you reflect through a calendar heat‑map interface.
+> **Bring light to every day** – A gratitude‑journal SNS that pairs you with a personal fairy, captures your voice entries once a day, and lets you reflect through a calendar interface.
 
 ---
 
@@ -10,7 +10,7 @@
 
 - **Fairy Companion** – Personal GPT‑powered avatar that asks reflective prompts and provides warm feedback.
 - **Voice‑first Journaling** – Record and transcribe your daily gratitude in one tap with ElevenLabs + Whisper.
-- **Calendar Heatmap** – Visual overview of streaks and past entries for habit reinforcement.
+- **Calendar** – Visual overview of streaks and past entries for habit reinforcement.
 - **Friend Peek** – View friends' entries (24 h window) only after you've posted yours, eliminating social pressure.
 - **Privacy‑by‑default** – Row‑Level‑Security on Supabase; only you and accepted friends can read your data.
 
@@ -80,7 +80,7 @@ Supabase migrations live under `supabase/migrations` and are version‑controlle
 
 ## 🤝 Contributing
 
-1. Create feature branch `git checkout -b feat/calendar-heatmap`.
+1. Create feature branch `git checkout -b feat/calendar`.
 2. Follow **Conventional Commits** for messages (`feat:`, `fix:` …).
 3. Pre‑commit hook runs `npm run lint`; CI must pass before merge.
 4. Open PR → automatic Vercel preview deploy for review.
