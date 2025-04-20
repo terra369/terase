@@ -1,14 +1,16 @@
 import { NextRequest } from 'next/server';
-import { supabase }  from '@/lib/supabase';
+import { supabase }   from '@/lib/supabase';
 
 export async function GET(
   _req: NextRequest,
-  { params }: { params: { date: string } }
+  { params }: { params: Promise<{ date: string }> }
 ) {
+  const { date } = await params;
+
   const { data, error } = await supabase
     .from('diaries')
     .select('*')
-    .eq('date', params.date)
+    .eq('date', date)
     .single();
 
   if (error) {
