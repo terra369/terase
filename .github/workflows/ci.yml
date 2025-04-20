@@ -1,10 +1,48 @@
 name: CI
-on: [push, pull_request]
+on:
+  push:
+    branches: [main]          # main へ push / Merge されたとき → 本番 DB へ適用
+  pull_request:               # PR 作成・更新時 → テスト + ステージ DB
 jobs:
-  node:
+  build-test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
-        with: {node-version: '20', cache: 'npm'}
-      - run: npm ci && npm run lint && npm run build
+        with: { node-version: '20', cache: 'npm' }
+      - run: npm ci
+      - run: npm run lint && npm run build           # Next.js ビルド
+
+  migrate-db:
+    needs: build-test
+    runs-on: ubuntu-latest
+    environment: production          # Secrets スコープを制限  [oai_citation_attribution:4‡GitHub Docs](https://docs.github.com/en/actions/managing-workflow-runs-and-deployments/managing-deployments/managing-environments-for-deployment?utm_source=chatgpt.com)
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1             # 公式 Action  [oai_citation_attribution:5‡Supabase](https://supabase.com/docs/guides/functions/examples/github-actions?utm_source=chatgpt.com)
+      - name: Link Supabase project
+        run: supabase link --project-ref $SUPABASE_PROJECT_REF
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      - name: Push migrations to Production DB
+        run: supabase db push --db-url "postgres://postgres:${SUPABASE_DB_PASSWORD}@db.${SUPABASE_PROJECT_REF}.supabase.co/postgres"
+        env:
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+
+  preview-db:
+    needs: build-test
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v1
+      - name: Create Branch DB & push migrations
+        run: |
+          supabase link --project-ref $SUPABASE_PROJECT_REF
+          supabase db branch "${{ github.head_ref }}" --password $SUPABASE_DB_PASSWORD
+          supabase db push --db-url "postgres://postgres:${SUPABASE_DB_PASSWORD}@aws-0-${{ github.head_ref }}.supabase.co/postgres"
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
