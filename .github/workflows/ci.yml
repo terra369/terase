@@ -54,7 +54,8 @@ jobs:
 
           supabase --experimental branches create "$SAFE_REF" \
             --project-ref "$SUPABASE_PROJECT_REF" \
-            --db-password "$SUPABASE_DB_PASSWORD" \
+            --region ap-northeast-1 \
+            --size micro \
             --no-interactive
 
           supabase --experimental branches get "$SAFE_REF" -o env >> $GITHUB_ENV
