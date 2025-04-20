@@ -52,18 +52,15 @@ export default function DiaryHeatmap({ year, month }: { year: number; month: num
             }))}
             classForValue={(v) => (v && v.count ? `color-level-${v.count}` : 'color-empty')}
             transformDayElement={(element, value, index) => {
-                /** element は実際には *ReactElement* なので clone できる */
-                const baseRect = React.cloneElement(
-                    element as unknown as React.ReactElement, // 型を any/unknown キャスト
-                    { key: `rect-${index}` }                  // key を直接指定
-                );
+                /** element は ReactElement<SVGRectProps> なので cast して座標取得 */
+                const el = element as React.ReactElement<React.SVGProps<SVGRectElement>>;
+                const baseRect = React.cloneElement(el, { key: `rect-${index}` });
 
                 if (!value) return baseRect;
                 const emo = emojiMap[value.date]?.mood_emoji;
                 if (!emo) return baseRect;
 
-                // element.props に座標が入っている
-                const { x, y, width, height } = (element as any).props;
+                const { x, y, width, height } = el.props;
                 const cx = Number(x) + Number(width) / 2;
                 const cy = Number(y) + Number(height) / 2 + 3;
 

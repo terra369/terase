@@ -1,5 +1,5 @@
-/* src/app/page.tsx  */
-'use client';                              // ← Client で動く
+'use client';
+import React from 'react';
 import DiaryHeatmap from './components/DiaryHeatmap';
 
 export default function Home() {
