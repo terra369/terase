@@ -1,12 +1,18 @@
+// src/app/diary/[date]/page.tsx
 import React from 'react';
 import { supabase } from '@/lib/supabase';
 import { format } from 'date-fns';
 
-export default async function DiaryDetail({ params: { date } }: { params: { date: string } }) {
+export default async function DiaryDetail(
+    { params }: { params: Promise<{ date: string }> }
+) {
+    const { date } = await params;
+
     const { data } = await supabase
         .from('diaries')
         .select('user_text,fairy_text,user_audio_url,mood_emoji')
-        .eq('date', date).single();
+        .eq('date', date)
+        .single();
 
     if (!data) return <p className="p-6">記録がありません</p>;
 
@@ -17,7 +23,9 @@ export default async function DiaryDetail({ params: { date } }: { params: { date
             </h1>
             <p className="whitespace-pre-wrap">{data.user_text}</p>
             <p className="text-green-700 whitespace-pre-wrap">{data.fairy_text}</p>
-            {data.user_audio_url && <audio controls src={data.user_audio_url} className="w-full" />}
+            {data.user_audio_url && (
+                <audio controls src={data.user_audio_url} className="w-full" />
+            )}
         </main>
     );
 }
