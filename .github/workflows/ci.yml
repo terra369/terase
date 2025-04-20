@@ -1,8 +1,8 @@
 name: CI
 on:
   push:
-    branches: [main]          # main へ push / Merge されたとき → 本番 DB へ適用
-  pull_request:               # PR 作成・更新時 → テスト + ステージ DB
+    branches: [main]
+  pull_request:
 jobs:
   build-test:
     runs-on: ubuntu-latest
@@ -11,17 +11,17 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: '20', cache: 'npm' }
       - run: npm ci
-      - run: npm run lint && npm run build           # Next.js ビルド
+      - run: npm run lint && npm run build
 
   migrate-db:
     needs: build-test
     runs-on: ubuntu-latest
-    environment: production          # Secrets スコープを制限  [oai_citation_attribution:4‡GitHub Docs](https://docs.github.com/en/actions/managing-workflow-runs-and-deployments/managing-deployments/managing-environments-for-deployment?utm_source=chatgpt.com)
+    environment: production
     if: github.ref == 'refs/heads/main'
     steps:
       - uses: actions/checkout@v4
       - name: Setup Supabase CLI
-        uses: supabase/setup-cli@v1             # 公式 Action  [oai_citation_attribution:5‡Supabase](https://supabase.com/docs/guides/functions/examples/github-actions?utm_source=chatgpt.com)
+        uses: supabase/setup-cli@v1
       - name: Link Supabase project
         run: supabase link --project-ref $SUPABASE_PROJECT_REF
         env:
