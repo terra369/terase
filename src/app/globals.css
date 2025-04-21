@@ -19,6 +19,28 @@
   }
 }
 
+@layer utilities {
+  .color-empty {
+    fill: #ebedf0;
+  }
+
+  .color-level-1 {
+    fill: #c6e48b;
+  }
+
+  .color-level-2 {
+    fill: #7bc96f;
+  }
+
+  .color-level-3 {
+    fill: #239a3b;
+  }
+
+  .color-level-4 {
+    fill: #196127;
+  }
+}
+
 body {
   background: var(--background);
   color: var(--foreground);
