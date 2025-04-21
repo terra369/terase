@@ -49,9 +49,16 @@ jobs:
       - name: Create Branch DB & push migrations
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
           SUPABASE_PROJECT_REF:  ${{ secrets.SUPABASE_PROJECT_REF }}
+          SUPABASE_PLAN:         ${{ secrets.SUPABASE_PLAN }}
         run: |
+          set -e
+          PLAN="${SUPABASE_PLAN:-$(supabase --experimental projects get $SUPABASE_PROJECT_REF -o json | jq -r '.plan')}"
+          echo "Plan=$PLAN"
+          if [ "$PLAN" = "Free" ] || [ "$PLAN" = "free" ]; then
+            echo "Skip preview DB on Free plan"
+            exit 0
+          fi
           SAFE_REF="${{ github.head_ref }}" && SAFE_REF="${SAFE_REF//\//-}"
 
           supabase --experimental branches create "$SAFE_REF" \
