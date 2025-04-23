@@ -1,5 +1,3 @@
-// src/app/diary/[date]/page.tsx
-import React from 'react';
 import { supabase } from '@/lib/supabase';
 import { format } from 'date-fns';
 

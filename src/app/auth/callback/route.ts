@@ -19,6 +19,7 @@ export async function GET(req: Request) {
               cookieStore.set(name, value, options)
             )
           } catch {
+            /* noop – Supabase cookie write is optional on Server Component */
           }
         },
       },
