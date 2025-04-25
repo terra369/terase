@@ -8,7 +8,6 @@ import { MobileLoginCard } from '@/app/components/ui/mobile-login-card'
 export default function Login() {
     const router = useRouter()
 
-    /* ✅ Auto-redirect if session already exists */
     useEffect(() => {
         supabaseBrowser.auth.getUser().then(({ data }) => {
             if (data.user) router.replace('/')
