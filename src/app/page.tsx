@@ -1,9 +1,9 @@
 import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabaseServer'
+import { createSupabaseServer } from '@/lib/supabaseServer'
 import DiaryHeatmap from '@/app/components/DiaryHeatmap'
 
 export default async function Home() {
-  const supabase = await createClient()
+  const supabase = await createSupabaseServer()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) redirect('/login')
