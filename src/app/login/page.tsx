@@ -17,7 +17,7 @@ export default function Login() {
     async function google() {
         await supabaseBrowser.auth.signInWithOAuth({
             provider: 'google',
-            options: { redirectTo: `${location.origin}/auth/callback` }
+            options: { redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL ?? window.location.origin}/auth/callback` }
         })
     }
 
