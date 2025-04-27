@@ -11,7 +11,7 @@ import { Loader2 } from 'lucide-react'
 interface MobileLoginCardProps {
     /** Google ボタンが押された時に呼ばれる
      *  親で signInWithOAuth を実行する */
-    onGoogle: () => void | Promise<void>
+    onGoogle: () => Promise<void>
 }
 
 export function MobileLoginCard({ onGoogle }: MobileLoginCardProps) {

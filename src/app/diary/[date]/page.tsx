@@ -1,14 +1,25 @@
-import { supabase } from '@/lib/supabase';
+import { supabaseServer } from '@/lib/supabase/server';
 import { format } from 'date-fns';
 
 export default async function DiaryDetail(
     { params }: { params: Promise<{ date: string }> }
 ) {
+    // ❶ dynamic route の params は必ず await して展開
     const { date } = await params;
+
+    // ❷ YYYY-MM-DD の簡易バリデーション
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+        return <p className="p-6 text-red-600">URL が不正です</p>;
+    }
+
+    // ❸ supabaseServer は同期関数なので await 不要
+    const supabase = await supabaseServer();
 
     const { data } = await supabase
         .from('diaries')
-        .select('user_text,fairy_text,user_audio_url,fairy_audio_url,mood_emoji')
+        .select(
+            'user_text,fairy_text,user_audio_url,fairy_audio_url,mood_emoji'
+        )
         .eq('date', date)
         .single();
 
@@ -28,10 +39,14 @@ export default async function DiaryDetail(
 
             {/* ユーザー音声 */}
             {data.user_audio_url && (
-                <audio controls src={data.user_audio_url} className="w-full mb-4" />
+                <audio
+                    controls
+                    src={data.user_audio_url}
+                    className="w-full mb-4"
+                />
             )}
 
-            {/* ★ 妖精音声を追加表示 */}
+            {/* 妖精音声 */}
             {data.fairy_audio_url && (
                 <audio controls src={data.fairy_audio_url} className="w-full" />
             )}

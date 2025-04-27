@@ -1,29 +1,19 @@
-'use client'
+"use client";
+import { supabaseBrowser } from "@/lib/supabase/browser";
+import { MobileLoginCard } from "@/app/components/ui/mobile-login-card";
 
-import { useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-import { supabaseBrowser } from '@/lib/supabaseBrowser'
-import { MobileLoginCard } from '@/app/components/ui/mobile-login-card'
-
-export default function Login() {
-    const router = useRouter()
-
-    useEffect(() => {
-        supabaseBrowser.auth.getUser().then(({ data }) => {
-            if (data.user) router.replace('/')
-        })
-    }, [router])
-
-    async function google() {
-        await supabaseBrowser.auth.signInWithOAuth({
-            provider: 'google',
-            options: { redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL ?? window.location.origin}/auth/callback` }
-        })
-    }
-
+export default function LoginButton() {
+    const signIn = async () => {
+        const supabase = supabaseBrowser;
+        supabase.auth.signInWithOAuth({
+            provider: "google",
+            options: { redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL ?? window.location.origin}/auth/callback` },
+        });
+    };
     return (
-        <main className="flex flex-col items-center justify-center min-h-screen p-4">
-            <MobileLoginCard onGoogle={google} />
+        <main className="flex h-screen items-center justify-center p-4">
+            {/* MobileLoginCard 側では onGoogle を呼ぶだけ */}
+            <MobileLoginCard onGoogle={signIn} />
         </main>
-    )
+    );
 }

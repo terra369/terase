@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createSupabaseServer } from '@/lib/supabaseServer'
+import { supabaseServer } from '@/lib/supabase/server'
 import { uploadAudio } from '@/lib/uploadAudio'
 import { transcribe } from '@/lib/whisper'
 
 export async function POST(req: NextRequest) {
-  const supabase = await createSupabaseServer()
+  const supabase = await supabaseServer()
   const { user } = (await supabase.auth.getUser()).data
   if (!user) return NextResponse.json({ error: 'unauth' }, { status: 401 })
 
