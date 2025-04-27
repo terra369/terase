@@ -1,12 +1,11 @@
 import { supabaseServer } from '@/lib/supabase/server';
-import type { NextRequest } from 'next/server';
 
 /**
  * GET /api/diaries/2025-04-27
  * Returns a single diary entry for the signed-in user.
  */
 export async function GET(
-  _req: NextRequest,
+  _req: Request,
   { params }: { params: { date: string } }
 ) {
   const { date } = params;
