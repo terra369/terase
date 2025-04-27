@@ -1,4 +1,4 @@
-import { supabaseBrowser } from './supabaseBrowser'
+import { supabaseBrowser } from './supabase/browser'
 
 export async function uploadAudio(file: Blob, userId: string) {
   const path = `${userId}/${Date.now()}.webm`
