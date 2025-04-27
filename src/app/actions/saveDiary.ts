@@ -1,7 +1,7 @@
 'use server'
 
 import { z } from 'zod'
-import { createSupabaseServer } from '@/lib/supabaseServer'
+import { supabaseServer } from '@/lib/supabase/server'
 
 const diarySchema = z.object({
   // YYYY-MM-DD
@@ -30,7 +30,7 @@ export async function saveDiary (_prev: unknown, fd: FormData) {
   }
   const input: DiaryInput = parsed.data
 
-  const supabase = await createSupabaseServer()
+  const supabase = await supabaseServer()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error('Unauthorized')
 
