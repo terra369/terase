@@ -1,16 +1,15 @@
 import { supabaseServer } from '@/lib/supabase/server';
 
 /**
- * GET /api/diaries/2025-04-27
- * Returns a single diary entry for the signed-in user.
+ * GET /api/diaries/[date]
  */
 export async function GET(
   _req: Request,
-  { params }: { params: { date: string } }
+  context: { params: { date: string } }
 ) {
-  const { date } = params;
+  const { date } = context.params;
 
-  // basic YYYY-MM-DD validation
+  // YYYY-MM-DD の簡易バリデーション
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
     return new Response('invalid date format', { status: 400 });
   }
