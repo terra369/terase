@@ -1,11 +1,22 @@
-import { NextRequest } from 'next/server';
-import { supabase }   from '@/lib/supabase';
+import { supabaseServer } from '@/lib/supabase/server';
+import type { NextRequest } from 'next/server';
 
+/**
+ * GET /api/diaries/2025-04-27
+ * Returns a single diary entry for the signed-in user.
+ */
 export async function GET(
   _req: NextRequest,
-  { params }: { params: Promise<{ date: string }> }
+  { params }: { params: { date: string } }
 ) {
-  const { date } = await params;
+  const { date } = params;
+
+  // basic YYYY-MM-DD validation
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    return new Response('invalid date format', { status: 400 });
+  }
+
+  const supabase = await supabaseServer();
 
   const { data, error } = await supabase
     .from('diaries')
@@ -13,8 +24,8 @@ export async function GET(
     .eq('date', date)
     .single();
 
-  if (error) {
-    return new Response(error.message, { status: 404 });
+  if (error || !data) {
+    return new Response(error?.message ?? 'not found', { status: 404 });
   }
   return Response.json(data);
 }

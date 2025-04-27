@@ -1,10 +1,17 @@
-import { supabase } from '@/lib/supabase';
+import { supabaseServer } from '@/lib/supabase/server';
 import { format } from 'date-fns';
 
 export default async function DiaryDetail(
-    { params }: { params: Promise<{ date: string }> }
+    { params }: { params: { date: string } }
 ) {
-    const { date } = await params;
+    const { date } = params;
+
+    // basic YYYY-MM-DD format guard
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+        return <p className="p-6 text-red-600">URL が不正です</p>;
+    }
+
+    const supabase = await supabaseServer();
 
     const { data } = await supabase
         .from('diaries')
@@ -31,7 +38,7 @@ export default async function DiaryDetail(
                 <audio controls src={data.user_audio_url} className="w-full mb-4" />
             )}
 
-            {/* ★ 妖精音声を追加表示 */}
+            {/* 妖精音声 */}
             {data.fairy_audio_url && (
                 <audio controls src={data.fairy_audio_url} className="w-full" />
             )}
