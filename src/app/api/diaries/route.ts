@@ -9,11 +9,11 @@ export async function GET(req: NextRequest) {
     return new Response('missing or invalid month param', { status: 400 });
   }
 
-  const { data, error } = await supabase
-    .from('diaries')
-    .select('date,count,mood_emoji')
-    .gte('date', `${month}-01`)
-    .lte('date', `${month}-31`);
+const { data, error } = await supabase
+  .from('diary_month_summary')
+  .select('*')
+  .gte('date', `${month}-01`)
+  .lte('date', `${month}-31`);
 
   if (error) return new Response(error.message, { status: 400 });
   return Response.json(data);
