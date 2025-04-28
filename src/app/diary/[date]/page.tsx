@@ -21,7 +21,7 @@ export default async function DiaryDetail(
             'user_text,fairy_text,user_audio_url,fairy_audio_url,mood_emoji'
         )
         .eq('date', date)
-        .single();
+        .maybeSingle();
 
     if (!data) return <p className="p-6">記録がありません</p>;
 
