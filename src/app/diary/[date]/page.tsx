@@ -4,17 +4,16 @@ import { format } from 'date-fns';
 export default async function DiaryDetail(
     { params }: { params: Promise<{ date: string }> }
 ) {
-    // ❶ dynamic route の params は必ず await して展開
+    /* ❶ 動的ルート展開 */
     const { date } = await params;
 
-    // ❷ YYYY-MM-DD の簡易バリデーション
+    /* ❷ YYYY-MM-DD バリデーション */
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
         return <p className="p-6 text-red-600">URL が不正です</p>;
     }
 
-    // ❸ supabaseServer は同期関数なので await 不要
+    /* ❸ DB から日記 1 件取得 */
     const supabase = await supabaseServer();
-
     const { data } = await supabase
         .from('diaries')
         .select(
@@ -25,6 +24,16 @@ export default async function DiaryDetail(
 
     if (!data) return <p className="p-6">記録がありません</p>;
 
+    /* ❹ 音声の署名付き URL を 10 分間取得（RLS が許可すれば成功） */
+    let signedAudio: string | null = null;
+    if (data.user_audio_url) {
+        const { data: urlData, error } = await supabase.storage
+            .from('diary-audio')
+            .createSignedUrl(data.user_audio_url, 600);
+        if (!error && urlData) signedAudio = urlData.signedUrl;
+    }
+
+    /* ❺ 画面描画 */
     return (
         <main className="max-w-xl mx-auto p-6 space-y-4">
             <h1 className="text-xl font-bold">
@@ -37,16 +46,12 @@ export default async function DiaryDetail(
             {/* 妖精フィードバック */}
             <p className="text-green-700 whitespace-pre-wrap">{data.fairy_text}</p>
 
-            {/* ユーザー音声 */}
-            {data.user_audio_url && (
-                <audio
-                    controls
-                    src={data.user_audio_url}
-                    className="w-full mb-4"
-                />
+            {/* ユーザー音声再生（署名 URL が取れた場合のみ） */}
+            {signedAudio && (
+                <audio controls src={signedAudio} className="w-full mb-4" />
             )}
 
-            {/* 妖精音声 */}
+            {/* 妖精音声（公開 URL のままならそのまま再生） */}
             {data.fairy_audio_url && (
                 <audio controls src={data.fairy_audio_url} className="w-full" />
             )}
