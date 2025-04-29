@@ -3,9 +3,9 @@ import { supabaseServer } from '@/lib/supabase/server';
 
 export async function GET(
   _req: Request,
-  { params }: { params: { date: string } }
+  { params }: { params: Promise<{ date: string }> },
 ) {
-  const { date } = params;
+  const { date } = await params;
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date))
     return new NextResponse('invalid date', { status: 400 });
 
