@@ -1,5 +1,6 @@
 import { supabaseServer } from '@/lib/supabase/server';
 import { format } from 'date-fns';
+import DiaryDetailClient from './DiaryDetailClient';
 
 export default async function DiaryDetail(
     { params }: { params: Promise<{ date: string }> },
@@ -15,27 +16,27 @@ export default async function DiaryDetail(
         .select('id, diary_messages(*)')
         .eq('date', date)
         .single();
-
     if (!data) return <p className="p-6">記録がありません</p>;
 
-    const messages = [...data.diary_messages].sort(
-        (a, b) => +new Date(a.created_at) - +new Date(b.created_at),
+    const msgs = await Promise.all(
+        data.diary_messages.map(async (m) => {
+            if (!m.audio_url) return m;
+            const { data: sig, error } = await supabase.storage
+                .from('diary-audio')
+                .createSignedUrl(m.audio_url, 600);
+            return { ...m, signed: error ? null : sig?.signedUrl };
+        }),
     );
 
+    msgs.sort((a, b) => +new Date(a.created_at) - +new Date(b.created_at));
+
     return (
-        <main className="max-w-xl mx-auto p-6 space-y-4">
-            <h1 className="text-xl font-bold">
+        <main className="max-w-xl mx-auto p-6">
+            <h1 className="text-xl font-bold mb-4">
                 {format(new Date(date), 'yyyy年M月d日')}
             </h1>
-
-            {messages.map(m => (
-                <div key={m.id} className={m.role === 'ai' ? 'text-green-700' : ''}>
-                    {m.text}
-                    {m.audio_url && (
-                        <audio controls src={m.audio_url} className="w-full mt-1" />
-                    )}
-                </div>
-            ))}
+            {/* Client Component に渡す */}
+            <DiaryDetailClient diaryId={data.id} initialMsgs={msgs} />
         </main>
     );
 }
