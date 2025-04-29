@@ -32,8 +32,9 @@ export async function POST(req: NextRequest) {
 
     /* 5) クライアントへレスポンス */
     return NextResponse.json({ audioPath: path, transcript });
-  } catch (e: any) {
-    console.error(e);
-    return NextResponse.json({ error: e.message ?? 'server error' }, { status: 500 });
+  } catch (e: unknown) {
+    const err = e instanceof Error ? e : new Error(String(e));
+    console.error(err);
+    return NextResponse.json({ error: err.message ?? 'server error' }, { status: 500 });
   }
 }

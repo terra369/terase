@@ -57,9 +57,10 @@ export default function NewDiary() {
 
             // 3) 完了
             router.push('/');
-        } catch (e: any) {
-            console.error(e);
-            setStatus(`エラー: ${e.message}`);
+        } catch (e: unknown) {
+            const err = e instanceof Error ? e : new Error(String(e));
+            console.error(err);
+            setStatus(`エラー: ${err.message}`);
         }
     }
 

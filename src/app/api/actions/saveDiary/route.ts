@@ -15,10 +15,11 @@ export async function POST(req: NextRequest) {
 
     // ③ 正常レスポンス
     return NextResponse.json({ ok: true });
-  } catch (e: any) {
-    console.error(e);
+  } catch (e: unknown) {
+    const err = e instanceof Error ? e : new Error(String(e));
+    console.error(err);
     return NextResponse.json(
-      { error: e.message ?? 'server error' },
+      { error: err.message ?? 'server error' },
       { status: 400 },
     );
   }
