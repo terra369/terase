@@ -7,57 +7,52 @@ export default function NewDiary() {
     const router = useRouter();
     const [status, setStatus] = useState<string | null>(null);
 
-    /** 共通ヘルパ: fetch + JSON + エラーハンドリング */
     async function fetchJSON(input: RequestInfo, init?: RequestInit) {
-        try {
-            const ctl = AbortSignal.timeout(10_000);
-            const res = await fetch(input, { ...init, signal: ctl });
-
-            // HTTP レベルのエラーを捕捉
-            if (!res.ok) {
-                const { error } = await res.json().catch(() => ({ error: res.statusText }));
-                throw new Error(error ?? `HTTP ${res.status}`);
-            }
-
-            return await res.json();
-        } catch (e) {
-            // ネットワーク or JSON 解析エラー
-            if (e instanceof DOMException && e.name === 'TimeoutError') {
-                throw new Error('タイムアウトしました');
-            }
-            throw e;
+        const res = await fetch(input, init);
+        if (!res.ok) {
+            const { error } = await res.json().catch(() => ({ error: res.statusText }));
+            throw new Error(error);
         }
+        return res.json();
     }
 
-    /* 音声録音が終わったあとの処理 */
+    /* 最大 3 往復まで */
     async function onFinish(blob: Blob) {
         try {
+            /* 1) 音声をアップロード & 文字起こし */
             setStatus('アップロード中…');
-
-            // 1) 録音ファイルを Whisper へ
             const fd = new FormData();
             fd.append('audio', blob);
             const { audioPath, transcript } = await fetchJSON('/api/transcribe', {
                 method: 'POST',
                 body: fd,
-                credentials: 'include',
             });
 
-            // 2) 日記保存
+            /* 2) diaries upsert + 初回メッセージ保存 */
             setStatus('保存中…');
-            await fetchJSON('/api/actions/saveDiary', {
+            const { diaryId } = await fetchJSON('/api/actions/saveDiary', {
                 method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     date: new Date().toISOString().slice(0, 10),
                     text: transcript,
                     audioPath,
                 }),
-                headers: { 'Content-Type': 'application/json' },
             });
 
-            // 3) 完了
-            router.push('/');
-        } catch (e: unknown) {
+            /* 3) AI 返信を最大 2 回生成（Edge Function 推奨）*/
+            await fetchJSON('/api/diaries/messages', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    diaryId,
+                    role: 'ai',
+                    text: '',
+                }),
+            });
+
+            router.push(`/diary/${new Date().toISOString().slice(0, 10)}`);
+        } catch (e) {
             const err = e instanceof Error ? e : new Error(String(e));
             console.error(err);
             setStatus(`エラー: ${err.message}`);
