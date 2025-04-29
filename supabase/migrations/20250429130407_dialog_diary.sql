@@ -1,9 +1,5 @@
 begin;
 
-/*----------------------------------------------------------
-  1) diary_messages ─ 1 日記 = n メッセージ
-     ※ 先に必ず作成しておく
-  ----------------------------------------------------------*/
 create table if not exists public.diary_messages (
   id          bigserial primary key,
   diary_id    int  not null references public.diaries(id) on delete cascade,
@@ -14,9 +10,6 @@ create table if not exists public.diary_messages (
 );
 alter table public.diary_messages enable row level security;
 
-/*----------------------------------------------------------
-  2) バックフィル (PL/pgSQL で列存在チェック)
-  ----------------------------------------------------------*/
 do $$
 begin
   if exists (
@@ -38,25 +31,16 @@ begin
 end;
 $$;
 
-/*----------------------------------------------------------
-  3) profiles ─ 妖精列を削除
-  ----------------------------------------------------------*/
 alter table public.profiles
   drop column if exists fairy_name,
   drop column if exists fairy_img_url;
 
-/*----------------------------------------------------------
-  4) diaries ─ 妖精列と旧ユーザー列を削除
-  ----------------------------------------------------------*/
 alter table public.diaries
   drop column if exists fairy_text,
   drop column if exists fairy_audio_url,
   drop column if exists user_text,
   drop column if exists user_audio_url;
 
-/*----------------------------------------------------------
-  5) RLS ポリシー
-  ----------------------------------------------------------*/
 drop policy if exists msg_select_owner_friend on public.diary_messages;
 create policy msg_select_owner_friend
   on public.diary_messages for select
@@ -88,9 +72,6 @@ create policy msg_insert_owner
     )
   );
 
-/*----------------------------------------------------------
-  6) profiles 行の補完 & Sign-Up トリガー
-  ----------------------------------------------------------*/
 insert into public.profiles (id)
 select id
   from auth.users
@@ -116,7 +97,4 @@ create trigger trg_create_profile
   after insert on auth.users
   for each row execute function public.create_profile_for_new_user();
 
-/*----------------------------------------------------------
-  7) 完了
-  ----------------------------------------------------------*/
 commit;
