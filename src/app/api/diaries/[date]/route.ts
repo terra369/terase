@@ -1,8 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { supabaseServer } from '@/lib/supabase/server';
 
 export async function GET(
-  _req: NextRequest,
+  _req: Request,
   { params }: { params: { date: string } }
 ) {
   const { date } = params;
