@@ -9,7 +9,7 @@ import { supabaseBrowser } from '@/lib/supabase/browser';
  * @param diaryId  - diaries.id（1 つの日記スレッドを指定）
  * @param onInsert - (newRow) => void  を呼び出すコールバック
  */
-export function useDiaryRealtime<T extends { [key: string]: any }>(
+export function useDiaryRealtime<T extends { [key: string]: unknown }>(
   diaryId: number,
   onInsert: (row: T) => void,
 ) {
