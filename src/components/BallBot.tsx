@@ -39,6 +39,11 @@ const ThinFilmMaterial = shaderMaterial(
     float opd  = 2.0 * nm * cosI;
     return 0.5 + 0.5 * cos(phase * opd);
   }
+  // HSL to RGB conversion
+  vec3 hsl2rgb(vec3 c) {
+    vec3 rgb = clamp(abs(mod(c.x * 6.0 + vec3(0.0, 4.0, 2.0), 6.0) - 3.0) - 1.0, 0.0, 1.0);
+    return c.z + c.y * (rgb - 0.5) * (1.0 - abs(2.0 * c.z - 1.0));
+  }
   void main(){
     // film thickness varies with time & position
     float nm = 320.0 + 200.0 * sin(uTime + vPos.y*4.0 + vPos.x*2.0);
@@ -46,7 +51,10 @@ const ThinFilmMaterial = shaderMaterial(
     // Fresnel factor emphasises edges (rim)
     float fresnel = pow(1.0 - cosI, 3.0);
     // pastel rainbow colour only near rim
-    vec3 colour = thinFilm(nm, cosI) * fresnel * (0.5 + uAmp * 0.4);
+    float hue = fract(vPos.y * 0.4 + uTime * 0.04);
+    vec3 rainbow = hsl2rgb(vec3(hue, 0.75, 0.55));
+    float rim = mix(0.4, 1.0, fresnel);
+    vec3 colour = rainbow * rim * (0.6 + uAmp * 0.5);
     // calculate alpha to keep interior very transparent
     float alpha = mix(0.05, 0.6, fresnel);
     gl_FragColor = vec4(colour, alpha);
