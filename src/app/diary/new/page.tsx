@@ -1,7 +1,11 @@
 'use client';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useState, Suspense, useEffect } from 'react';
 import VoiceRecorder from '@/components/VoiceRecorder';
+import { Canvas } from '@react-three/fiber';
+import { BallBot } from '@/components/BallBot';
+import { useAudioStore } from '@/stores/useAudioStore';
+import { useRecorder } from '@/components/hooks/useRecorder';
 
 export default function NewDiary() {
     const router = useRouter();
@@ -59,11 +63,63 @@ export default function NewDiary() {
         }
     }
 
+    // Add amp to audio store when recording for visualization reactivity
+    const setAmp = useAudioStore(state => state.setAmp);
+    const [isAnimating, setIsAnimating] = useState(false);
+
+    // Simulate audio reactivity during recording
+    useEffect(() => {
+        let intervalId: NodeJS.Timeout;
+
+        if (isAnimating) {
+            intervalId = setInterval(() => {
+                // Generate random amplitude value between 0.1 and 0.8 to simulate voice activity
+                setAmp(0.1 + Math.random() * 0.7);
+            }, 100);
+        } else {
+            setAmp(0); // Reset amplitude when not recording
+        }
+
+        return () => {
+            if (intervalId) clearInterval(intervalId);
+            setAmp(0); // Reset on cleanup
+        };
+    }, [isAnimating, setAmp]);
+
+    // Custom VoiceRecorder that also triggers animation
+    const handleRecordingState = (isRecording: boolean, blob?: Blob) => {
+        setIsAnimating(isRecording);
+        if (!isRecording && blob) {
+            onFinish(blob);
+        }
+    };
+
     return (
-        <main className="p-4 space-y-4">
-            <h1 className="text-xl font-bold">Speak your gratitude</h1>
-            <VoiceRecorder onFinish={onFinish} />
-            {status && <p className="text-sm text-muted-foreground">{status}</p>}
+        <main className="p-6 max-w-xl mx-auto space-y-6">
+            <h1 className="text-2xl font-bold text-center">
+                <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-cyan-600">
+                    Speak Your Gratitude
+                </span>
+            </h1>
+
+            {/* 3D Visualization */}
+            <div className="h-60 w-full rounded-lg overflow-hidden mb-4 border border-blue-100 dark:border-blue-900 shadow-md">
+                <Canvas camera={{ position: [0, 0, 3] }}>
+                    <Suspense fallback={null}>
+                        <BallBot />
+                        <ambientLight intensity={0.4} />
+                    </Suspense>
+                </Canvas>
+            </div>
+
+            <div className="bg-white/50 dark:bg-gray-900/50 p-4 rounded-lg shadow-md backdrop-blur-sm">
+                <VoiceRecorder onStateChange={handleRecordingState} />
+                {status && (
+                    <div className="mt-4 p-3 rounded-md bg-blue-50 dark:bg-blue-900/20 text-blue-800 dark:text-blue-200 animate-pulse">
+                        <p className="text-sm">{status}</p>
+                    </div>
+                )}
+            </div>
         </main>
     );
 }

@@ -13,119 +13,60 @@ const supabase = createClient(supabaseUrl, serviceRole, {
 });
 const openai = new OpenAI({ apiKey: openAiKey });
 
-/* ─── Helper: Storage へ mp3 を private アップロード ─────── */
-async function uploadAudio(buf: Uint8Array, diaryId: number) {
-  const path = `ai/${diaryId}/${Date.now()}.mp3`;
+/* ─── Helper: Deep Feedback Import ─────────────────────── */
+import { processDeepFeedback } from "./deep.ts";
 
-  console.log("uploadAudio: createSignedUploadUrl", path);
-  const { data: up, error: upErr } = await supabase
-    .storage.from("diary-audio")
-    .createSignedUploadUrl(path);
-  if (upErr || !up) throw upErr ?? new Error("signed upload url failed");
-
-  console.log("uploadAudio: PUT audio");
-  const put = await supabase.storage
-    .from("diary-audio")
-    .uploadToSignedUrl(up.path, up.token, buf, {
-      contentType: "audio/mpeg",
-    });
-  if (put.error) throw put.error;
-
-  return path;
+/* ─── Helper: Deep Feedback (BG Task) ──────────────────── */
+async function runDeepFeedback(record: any, msgId: number, up: any) {
+  try {
+    return await processDeepFeedback(record, msgId, up);
+  } catch (e) {
+    console.error("runDeepFeedback: error", e);
+  }
 }
 
 /* ─── Main ─────────────────────────────────────────────── */
-serve(async (req) => {
-  try {
-    /* ❶ Realtime Webhook ペイロードを取得 ------------------ */
-    const { record } = await req.json();
-    if (!record) return new Response("no payload", { status: 400 });
+serve(async (req, ctx) => {
+  const { record } = await req.json();
+  if (!record || record.role !== "user") return new Response("ignore");
 
-    // user 発言以外はスキップ
-    if (record.role !== "user") {
-      console.log("ai_reply: skipped (not user)");
-      return new Response("ignore");
-    }
+  /* ❶ ライト版 Chat */
+  const quick = await openai.chat.completions.create({
+    model: "gpt-4o-mini",
+    temperature: 0.5,
+    max_tokens: 256,
+    messages: [
+      { role: "system",
+        content: "あなたは感謝日記をサポートするコーチです。200字以内、全ひらがな、完全肯定で返答。" },
+      { role: "user", content: record.text },
+    ],
+  });
+  const replyText = quick.choices[0].message.content.trim();
 
-    console.log("ai_reply: new user msg", record);
+  /* ❷ mp3 保存用の署名付き URL を発行 */
+  const { data: up } = await supabase.storage
+      .from("diary-audio")
+      .createSignedUploadUrl(`ai/${record.diary_id}/${Date.now()}.mp3`);
+  if (!up) throw new Error("signedUrl failed");
 
-    /* ❷ 同じ diary で AI レスポンスが 3 回を超えたら打ち切り */
-    const { count } = await supabase
-      .from("diary_messages")
-      .select("*", { head: true, count: "exact" })
-      .eq("diary_id", record.diary_id)
-      .eq("role", "ai");
-    if ((count ?? 0) >= 999) {
-      console.log("ai_reply: limit reached");
-      return new Response("limit");
-    }
+  /* ❸ DB へライト版挿入 */
+  const { data: msg } = await supabase.from("diary_messages")
+      .insert({
+        diary_id: record.diary_id,
+        role: "ai",
+        text: replyText,
+        audio_url: null,
+      }).select().single();
 
-    /* ❸ OpenAI ChatCompletion ----------------------------- */
-    console.log("ai_reply: call OpenAI ChatCompletion");
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4o",
-      max_tokens: 256,
-      temperature: 0.7,
-      messages: [
-        {
-          role: "system",
-          content:
-            "あなたは感謝日記を書くユーザーをサポートするコーチです。丁寧語で 200 字以内でフィードバックしてください。",
-        },
-        { role: "user", content: record.text },
-      ],
-    });
-
-    const replyText =
-      completion.choices?.[0]?.message?.content?.trim() ?? "素敵ですね！";
-    console.log("ai_reply: ChatCompletion ok →", replyText);
-
-    /* ❹ OpenAI Text‑to‑Speech ----------------------------- */
-    console.log("ai_reply: call OpenAI TTS");
-    const speechRes = await openai.audio.speech.create({
-      model: "tts-1-hd",
-      voice: "shimmer",
-      input: replyText,
-      response_format: "mp3",
-      speed: 1.0,
-    });
-
-    const buf = new Uint8Array(await speechRes.arrayBuffer());
-    const audioPath = await uploadAudio(buf, record.diary_id);
-    console.log("ai_reply: audio uploaded (OpenAI) →", audioPath);
-
-    /* ❹-extra owner を diary 作者 UID に付け替え ----------- */
-    const { data: d } = await supabase
-      .from("diaries")
-      .select("user_id")
-      .eq("id", record.diary_id)
-      .single();
-    const ownerUid = d?.user_id;
-
-    const { error: ownErr } = await supabase.rpc("set_storage_owner", {
-      p_bucket: "diary-audio",
-      p_name:   audioPath,
-      p_owner:  ownerUid,
-    });
-    if (ownErr) throw ownErr;
-    console.log("ai_reply: set_storage_owner ok");
-
-    /* ❺ AI メッセージ挿入 -------------------------------- */
-    const { error } = await supabase.from("diary_messages").insert({
-      diary_id:  record.diary_id,
-      role:      "ai",
-      text:      replyText,
-      audio_url: audioPath,
-    });
-    if (error) throw error;
-    console.log("ai_reply: insert ai message");
-
-    return new Response("ok");
-  } catch (e) {
-    console.error("ai_reply: error", e);
-    return new Response(
-      `error: ${e instanceof Error ? e.message : String(e)}`,
-      { status: 500 },
-    );
+  /* ❹ BG タスクでディープ版生成 */
+  if (ctx && typeof (ctx as any).waitUntil === "function") {
+    (ctx as any).waitUntil(runDeepFeedback(record, msg.id, up));
+  } else {
+    // ローカル環境など ctx.waitUntil が未実装の場合はフォールバックで非同期実行
+    runDeepFeedback(record, msg.id, up);
   }
+
+  return new Response(JSON.stringify({ replyText, upload: up }), {
+    headers: { "Content-Type": "application/json" },
+  });
 });
