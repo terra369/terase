@@ -24,6 +24,12 @@ export async function supabaseServer() {
           }
         },
       },
+      // 認証関連の設定を追加してトークン管理を改善
+      auth: {
+        autoRefreshToken: true,
+        persistSession: true,
+        detectSessionInUrl: false  // サーバーサイドではURLからのセッション検出を無効化
+      }
     }
   )
 }

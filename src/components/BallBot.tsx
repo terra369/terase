@@ -92,7 +92,7 @@ declare module '@react-three/fiber' {
 /* ------------------------------------------------------------------
    BallBot – 音声に反応するJARVIS風ホログラフィック表現
 -------------------------------------------------------------------*/
-export function BallBot() {
+export default function BallBot() {
   // シェーダーを適用する球体への参照
   const meshRef = useRef<THREE.Mesh>(null!);
   // 浮遊動作のあるグループへの参照
@@ -142,8 +142,8 @@ export function BallBot() {
 
       {/* 浮遊動作を持つグループ */}
       <group ref={groupRef}>
-        {/* ホログラフィック球体 - 粒子数を増やしてより滑らかに */}
-        <Icosahedron ref={meshRef} args={[1, 36]}>
+        {/* ホログラフィック球体 - サイズを小さくしてより活発な動きに */}
+        <Icosahedron ref={meshRef} args={[0.6, 36]}>
           {/* eslint-disable react/no-unknown-property */}
           <thinFilmMaterial
             transparent={true}

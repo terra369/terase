@@ -3,7 +3,7 @@ import { useRouter } from 'next/navigation';
 import { useState, Suspense, useEffect } from 'react';
 import VoiceRecorder from '@/components/VoiceRecorder';
 import { Canvas } from '@react-three/fiber';
-import { BallBot } from '@/components/BallBot';
+import BallBot from '@/components/BallBot';
 import { useAudioStore } from '@/stores/useAudioStore';
 // useRecorder is imported in VoiceRecorder component, not needed here
 // import { useRecorder } from '@/components/hooks/useRecorder';
