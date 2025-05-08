@@ -5,7 +5,8 @@ import VoiceRecorder from '@/components/VoiceRecorder';
 import { Canvas } from '@react-three/fiber';
 import { BallBot } from '@/components/BallBot';
 import { useAudioStore } from '@/stores/useAudioStore';
-import { useRecorder } from '@/components/hooks/useRecorder';
+// useRecorder is imported in VoiceRecorder component, not needed here
+// import { useRecorder } from '@/components/hooks/useRecorder';
 
 export default function NewDiary() {
     const router = useRouter();
@@ -107,7 +108,7 @@ export default function NewDiary() {
                 <Canvas camera={{ position: [0, 0, 3] }}>
                     <Suspense fallback={null}>
                         <BallBot />
-                        <ambientLight intensity={0.4} />
+                        <ambientLight intensity={0.4 as any} />
                     </Suspense>
                 </Canvas>
             </div>

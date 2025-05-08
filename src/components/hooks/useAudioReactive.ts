@@ -65,7 +65,6 @@ export function useAudioReactive() {
       // 日本語の場合は文字単位でもいいが、より良い体験のため簡易的な区切りを使用
       // 句読点、空白、記号などで分割
       words = text.split(/([、。！？!?　\s]+)/).filter(w => w.trim().length > 0);
-      
       // あまりに短い単語が多すぎる場合は、文字単位に分割
       if (words.length < 3 && text.length > 10) {
         // 文字単位で分割するが、ある程度まとめる（3〜5文字ごと）
@@ -396,7 +395,7 @@ export function useAudioReactive() {
     
     const animate = () => {
       const currentTime = Date.now();
-      const deltaTime = currentTime - lastTime;
+      // const deltaTime = currentTime - lastTime; // 現在未使用
       lastTime = currentTime;
       
       // ストアを取得
@@ -530,7 +529,7 @@ export function useAudioReactive() {
   };
   
   // 引き続き使えるように実装を残す
-  const simulateAudioActivity = simulateIntonationBasedActivity;
+  // const simulateAudioActivity = simulateIntonationBasedActivity; // 現在未使用
   
   // クリーンアップ
   useEffect(() => {

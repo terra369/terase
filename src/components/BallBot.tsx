@@ -1,5 +1,5 @@
-import React, { useRef } from 'react';
-import { useFrame, extend, ThreeElements } from '@react-three/fiber';
+import { useRef } from 'react';
+import { useFrame, extend } from '@react-three/fiber';
 import { Icosahedron, shaderMaterial, Environment } from '@react-three/drei';
 import * as THREE from 'three';
 import { useAudioStore } from '@/stores/useAudioStore';
@@ -110,7 +110,8 @@ export function BallBot() {
     
     // シェーダーパラメータの更新
     if (meshRef.current) {
-      const unis = (meshRef.current.material as any).uniforms;
+      // マテリアルのuniformsにアクセス
+      const unis = (meshRef.current.material as THREE.ShaderMaterial).uniforms;
       unis.uTime.value = t;
       unis.uAmp.value = amp;
       
@@ -144,7 +145,7 @@ export function BallBot() {
         {/* ホログラフィック球体 - 粒子数を増やしてより滑らかに */}
         <Icosahedron ref={meshRef} args={[1, 36]}>
           <thinFilmMaterial
-            transparent
+            transparent={true}
             side={THREE.DoubleSide}
             blending={THREE.AdditiveBlending}
             depthWrite={false}

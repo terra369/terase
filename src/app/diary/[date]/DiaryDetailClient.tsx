@@ -17,6 +17,8 @@ type Msg = {
 };
 
 // Simple HUD Toast component for notifications
+// 現在は使用していないため後で必要になったら使う
+/* 
 const HUDToast = () => (
     <div className="bg-blue-900/80 text-blue-100 p-3 rounded-lg border border-blue-400/50 backdrop-blur-sm fixed top-4 right-4 z-50">
         <div className="flex items-center space-x-2">
@@ -25,6 +27,7 @@ const HUDToast = () => (
         </div>
     </div>
 );
+*/
 
 // Chat input component
 const ChatInput = ({ onSend }: { onSend: (text: string) => Promise<void> }) => {
@@ -152,7 +155,7 @@ export default function DiaryDetailClient(
                 <Canvas camera={{ position: [0, 0, 3] }}>
                     <Suspense fallback={null}>
                         <BallBot />
-                        <ambientLight intensity={0.4} />
+                        <ambientLight intensity={0.4 as any} />
                     </Suspense>
                 </Canvas>
             </div>
