@@ -145,9 +145,13 @@ export function BallBot() {
         {/* ホログラフィック球体 - 粒子数を増やしてより滑らかに */}
         <Icosahedron ref={meshRef} args={[1, 36]}>
           <thinFilmMaterial
+            // @ts-ignore react/no-unknown-property - Three.js special properties
             transparent={true}
+            // @ts-ignore react/no-unknown-property
             side={THREE.DoubleSide}
+            // @ts-ignore react/no-unknown-property
             blending={THREE.AdditiveBlending}
+            // @ts-ignore react/no-unknown-property
             depthWrite={false}
           />
         </Icosahedron>

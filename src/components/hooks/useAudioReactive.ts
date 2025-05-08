@@ -64,7 +64,7 @@ export function useAudioReactive() {
     if (isJapanese) {
       // 日本語の場合は文字単位でもいいが、より良い体験のため簡易的な区切りを使用
       // 句読点、空白、記号などで分割
-      words = text.split(/([、。！？!?　\s]+)/).filter(w => w.trim().length > 0);
+      words = text.split(/([\u3001\u3002\uff01\uff1f!?\u3000\s]+)/).filter(w => w.trim().length > 0);
       // あまりに短い単語が多すぎる場合は、文字単位に分割
       if (words.length < 3 && text.length > 10) {
         // 文字単位で分割するが、ある程度まとめる（3〜5文字ごと）
@@ -391,12 +391,12 @@ export function useAudioReactive() {
     
     // 開始時間を記録
     const startTime = Date.now();
-    let lastTime = startTime;
+    let lastTime = startTime; // eslint-disable-line @typescript-eslint/no-unused-vars
     
     const animate = () => {
       const currentTime = Date.now();
       // const deltaTime = currentTime - lastTime; // 現在未使用
-      lastTime = currentTime;
+      lastTime = currentTime; // 将来の拡張のために残しておく
       
       // ストアを取得
       const store = useAudioStore.getState();

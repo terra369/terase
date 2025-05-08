@@ -108,7 +108,8 @@ export default function NewDiary() {
                 <Canvas camera={{ position: [0, 0, 3] }}>
                     <Suspense fallback={null}>
                         <BallBot />
-                        <ambientLight intensity={0.4 as any} />
+                        {/* @ts-ignore react/no-unknown-property - Three.js property */}
+                        <ambientLight intensity={0.4} />
                     </Suspense>
                 </Canvas>
             </div>
