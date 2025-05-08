@@ -80,10 +80,10 @@ const ThinFilmMaterial = shaderMaterial(
 );
 
 // コンポーネントを拡張
- extend({ ThinFilmMaterial });
+extend({ ThinFilmMaterial });
 
 // JSXタグの型定義
- declare module '@react-three/fiber' {
+declare module '@react-three/fiber' {
   interface ThreeElements {
     thinFilmMaterial: ThreeElements['shaderMaterial'];
   }
@@ -107,28 +107,28 @@ export function BallBot() {
 
   useFrame(({ clock }) => {
     const t = clock.elapsedTime;
-    
+
     // シェーダーパラメータの更新
     if (meshRef.current) {
       // マテリアルのuniformsにアクセス
       const unis = (meshRef.current.material as THREE.ShaderMaterial).uniforms;
       unis.uTime.value = t;
       unis.uAmp.value = amp;
-      
+
       // 音声に反応するスケール変化を微修正
       meshRef.current.scale.setScalar(1 + amp * 0.25);
     }
-    
+
     // ホログラム全体の浮遊動作
     if (groupRef.current) {
       // 複数のサイン波の組み合わせで浮遊動作を作成
       const floatY = Math.sin(t * 0.4 + phaseY.current) * 0.1;
       const floatX = Math.sin(t * 0.3 + phaseX.current) * 0.05;
       const floatZ = Math.sin(t * 0.35 + phaseZ.current) * 0.08;
-      
+
       // 移動を適用
       groupRef.current.position.set(floatX, floatY, floatZ);
-      
+
       // 端正な回転動作
       groupRef.current.rotation.y = t * 0.05;
       groupRef.current.rotation.x = Math.sin(t * 0.1) * 0.02;
@@ -139,21 +139,19 @@ export function BallBot() {
     <>
       {/* 環境反射光を設定 - 柔らかい光源 */}
       <Environment preset="city" background={false} />
-      
+
       {/* 浮遊動作を持つグループ */}
       <group ref={groupRef}>
         {/* ホログラフィック球体 - 粒子数を増やしてより滑らかに */}
         <Icosahedron ref={meshRef} args={[1, 36]}>
+          {/* eslint-disable react/no-unknown-property */}
           <thinFilmMaterial
-            // @ts-ignore react/no-unknown-property - Three.js special properties
             transparent={true}
-            // @ts-ignore react/no-unknown-property
             side={THREE.DoubleSide}
-            // @ts-ignore react/no-unknown-property
             blending={THREE.AdditiveBlending}
-            // @ts-ignore react/no-unknown-property
             depthWrite={false}
           />
+          {/* eslint-enable react/no-unknown-property */}
         </Icosahedron>
       </group>
     </>
