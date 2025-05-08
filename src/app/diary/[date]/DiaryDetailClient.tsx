@@ -4,7 +4,7 @@ import { useState, useCallback, useEffect, useRef, Suspense } from 'react';
 import { supabaseBrowser } from '@/lib/supabase/browser';
 import { useDiaryRealtime } from '@/lib/useDiaryRealtime';
 import { Canvas } from '@react-three/fiber';
-import { BallBot } from '@/components/BallBot';
+import BallBot from '@/components/BallBot';
 import { useAudioReactive } from '@/components/hooks/useAudioReactive';
 
 type Msg = {
