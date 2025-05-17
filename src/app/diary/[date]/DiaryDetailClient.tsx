@@ -14,6 +14,7 @@ type Msg = {
     audio_url: string | null;
     signed?: string | null;
     created_at: string;
+    diary_id?: number; // 日記IDを追加
 };
 
 // Simple HUD Toast component for notifications
@@ -92,15 +93,111 @@ export default function DiaryDetailClient(
     const [messages, setMessages] = useState<Msg[]>(initialMsgs);
     const { speak } = useAudioReactive();
 
-    /* 署名 URL を付与して state 追加 */
+    /* メッセージを追加し、署名付きURLを生成する */
     const handleInsert = useCallback(async (m: Msg) => {
-        if (m.audio_url) {
-            const { data } = await supabaseBrowser
-                .storage
-                .from('diary-audio')
-                .createSignedUrl(m.audio_url, 600);
-            m.signed = data?.signedUrl ?? null;
+        console.log('[デバッグ] 受信したメッセージ:', m);
+        
+        // audio_urlが存在する場合、署名付きURLを生成する
+        if (m.audio_url && !m.signed) {
+            console.log('[デバッグ] 音声URLが存在します:', m.audio_url);
+            
+            try {
+                let relativePath = '';
+                
+                // 完全なURLから相対パスを抽出
+                if (m.audio_url.startsWith('http')) {
+                    console.log('[デバッグ] 完全URLです');
+                    
+                    try {
+                        // URLをパース
+                        const url = new URL(m.audio_url);
+                        console.log('[デバッグ] URLパス:', url.pathname);
+                        
+                        const pathSegments = url.pathname.split('/');
+                        console.log('[デバッグ] パスセグメント:', pathSegments);
+                        
+                        // 方法その1: "diary-audio" を探す
+                        const bucketIndex = pathSegments.indexOf('diary-audio');
+                        console.log('[デバッグ] "diary-audio"のインデックス:', bucketIndex);
+                        
+                        if (bucketIndex !== -1 && bucketIndex + 1 < pathSegments.length) {
+                            relativePath = pathSegments.slice(bucketIndex + 1).join('/');
+                            console.log('[デバッグ] 抽出された相対パス:', relativePath);
+                        } else {
+                            console.log('[デバッグ] バケット名が見つかりません');
+                            
+                            // 方法その2: "public" で代替検索
+                            const publicIndex = pathSegments.indexOf('public');
+                            if (publicIndex !== -1 && publicIndex + 1 < pathSegments.length) {
+                                relativePath = pathSegments.slice(publicIndex + 1).join('/');
+                                console.log('[デバッグ] "public"以降のパス:', relativePath);
+                            }
+                            
+                            // 方法その3: パターン検索 - ai/83/123456789.mp3 形式を探す
+                            if (!relativePath) {
+                                const match = url.pathname.match(/ai\/\d+\/\d+\.mp3/);
+                                if (match) {
+                                    relativePath = match[0];
+                                    console.log('[デバッグ] パターンマッチ:', relativePath);
+                                }
+                            }
+                            
+                            // 方法その4: ファイル名のみを取得
+                            if (!relativePath) {
+                                const lastSegment = pathSegments[pathSegments.length - 1];
+                                if (lastSegment && lastSegment.endsWith('.mp3')) {
+                                    // ディレクトリ構造を推測
+                                    if (m.role === 'ai') {
+                                        // 日記IDはコンポーネントから渡されたものを使用
+                                        relativePath = `ai/${diaryId}/${lastSegment}`;
+                                        console.log('[デバッグ] 推測パス(diaryId使用):', relativePath);
+                                        
+                                        // 安全のためにメッセージにもdiary_idをセット
+                                        m.diary_id = diaryId;
+                                    }
+                                }
+                            }
+                        }
+                    } catch (parseError) {
+                        console.error('[デバッグ] URL解析エラー:', parseError);
+                    }
+                } else {
+                    // 直接相対パスを使用
+                    relativePath = m.audio_url;
+                    console.log('[デバッグ] 直接相対パスを使用:', relativePath);
+                }
+                
+                // 相対パスが抽出できた場合は署名付きURLを生成
+                if (relativePath) {
+                    console.log('[デバッグ] 署名付きURL生成開始 - バケット=diary-audio, パス=', relativePath);
+                    
+                    const { data: signedUrlData, error: signedUrlError } = await supabaseBrowser.storage
+                        .from('diary-audio')
+                        .createSignedUrl(relativePath, 3600); // 1時間有効
+                    
+                    if (signedUrlError) {
+                        console.error('[デバッグ] 署名付きURL生成エラー:', signedUrlError);
+                        m.signed = m.audio_url;
+                    } else if (signedUrlData?.signedUrl) {
+                        m.signed = signedUrlData.signedUrl;
+                        console.log('[デバッグ] 署名付きURL生成成功:', m.signed.substring(0, 50) + '...');
+                    } else {
+                        console.log('[デバッグ] 署名付きURL生成レスポンスが空です');
+                        m.signed = m.audio_url;
+                    }
+                } else {
+                    console.log('[デバッグ] 相対パスを抽出できませんでした - 生のURLを使用します');
+                    m.signed = m.audio_url;
+                }
+            } catch (error) {
+                console.error('[デバッグ] 署名付きURL生成中のエラー:', error);
+                // エラー時は元のURLを使用
+                m.signed = m.audio_url;
+            }
+        } else if (m.signed) {
+            console.log('[デバッグ] すでに署名付きURLが存在します:', m.signed.substring(0, 50) + '...');
         }
+        
         setMessages((prev) => [...prev, m]);
     }, []);
 
@@ -116,34 +213,48 @@ export default function DiaryDetailClient(
         };
         setMessages(prev => [...prev, tempUserMsg]);
 
-        // Send to AI function
-        const { data } = await fetch("/api/functions/v1/ai_reply", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ text, diaryId })
-        }).then(res => res.json());
+        try {
+            console.log(`AI返答をリクエスト中...`);
+            
+            // Send to AI function - 新しい形式に合わせてリクエストを変更
+            const response = await fetch("/api/functions/v1/ai_reply", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ 
+                    record: { 
+                        text, 
+                        diary_id: diaryId, 
+                        role: 'user' 
+                    } 
+                })
+            });
+            
+            if (!response.ok) {
+                throw new Error(`AI返答APIエラー: ${response.status} ${response.statusText}`);
+            }
+            
+            const data = await response.json();
+            console.log(`AI返答を受信:`, data);
 
-        // Speak the reply
-        if (data?.replyText) {
-            await speak(data.replyText);
+            // Speak the reply - data.textを使用するように変更
+            if (data?.text) {
+                await speak(data.text);
+            }
+            
+            // 音声URLが含まれていれば反映されるはずだが、
+            // useDiaryRealtimeで自動的にリアルタイム更新されない場合は、
+            // ここで手動でメッセージを追加することも検討できます
+        } catch (error) {
+            console.error('AI返答を取得中にエラーが発生しました:', error);
+            // エラー通知を表示
+            const errorToast = document.createElement('div');
+            errorToast.innerHTML = `エラー: AI返答を取得できませんでした`;
+            errorToast.className = 'bg-red-900/80 text-red-100 p-3 rounded-lg fixed top-4 right-4 z-50';
+            document.body.appendChild(errorToast);
+            setTimeout(() => errorToast.remove(), 5000);
         }
-
-        // Subscribe to deep broadcast channel
-        supabaseBrowser
-            .channel(`diary_${diaryId}`)
-            .on("broadcast", { event: "deep" }, payload => {
-                // Show HUD notification
-                const hudContainer = document.createElement('div');
-                document.body.appendChild(hudContainer);
-                const hudToast = document.createElement('div');
-                hudToast.innerHTML = 'AI is processing a deep response...';
-                hudToast.className = 'bg-blue-900/80 text-blue-100 p-3 rounded-lg fixed top-4 right-4 z-50';
-                hudContainer.appendChild(hudToast);
-                setTimeout(() => hudContainer.remove(), 5000);
-
-                if (payload.text) speak(payload.text);
-            })
-            .subscribe();
+        
+        // Deep broadcast channelはもう不要 (レスポンスが一本化されたため)
     };
 
     useDiaryRealtime(diaryId, handleInsert);
@@ -171,8 +282,9 @@ export default function DiaryDetailClient(
                             : 'bg-gray-50 dark:bg-gray-800/30 mr-4'}`}
                     >
                         <p className="whitespace-pre-wrap">{m.text}</p>
-                        {m.signed && (
-                            <AudioPlayerWithReactive src={m.signed} />
+                        {/* 音声再生 - 署名付きURLがあればそれを使用し、なければ直接audio_urlを使用 */}
+                        {(m.signed || m.audio_url) && (
+                            <AudioPlayerWithReactive src={m.signed || m.audio_url || ''} />
                         )}
                     </div>
                 ))}
