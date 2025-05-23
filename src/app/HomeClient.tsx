@@ -135,10 +135,21 @@ export default function HomeClient({ userName }: HomeClientProps) {
       setAiResponding(false);
       setStatus('保存完了');
 
-      // 5) 少し待ってから新しい日記ページに遷移
+      // 5) 自動遷移を無効化（ユーザーが手動で遷移可能）
+      // setTimeout(() => {
+      //   router.push(`/diary/${today}`);
+      // }, 1500);
+
+      // 6) 少し待ってから続行可能を示すメッセージを表示
       setTimeout(() => {
-        router.push(`/diary/${today}`);
+        setStatus('続けて話してください');
       }, 1500);
+
+      // 7) さらに少し待ってからステータスをクリア
+      setTimeout(() => {
+        setStatus(null);
+        setResponseText(null);
+      }, 4000);
 
     } catch (error) {
       console.error('音声処理エラー:', error);
