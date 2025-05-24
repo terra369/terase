@@ -5,7 +5,7 @@
 **Terase** is a gratitude journal SNS application that combines AI-powered conversation with voice-first journaling. The name comes from the Japanese concept of bringing light ("照らせ") to every day through gratitude and reflection.
 
 ### Core Features
-- **AI Fairy Companion**: Personal GPT-powered avatar that asks reflective prompts and provides warm feedback
+- **AI Rainbow JARVIS Sphere**: Personal GPT-powered rainbow-colored spherical AI companion that asks reflective prompts and provides warm feedback
 - **Voice-first Journaling**: Record and transcribe daily gratitude entries using Whisper and ElevenLabs
 - **Calendar Interface**: Visual overview of streaks and past entries for habit reinforcement
 - **Friend Peek**: View friends' entries (24h window) only after posting your own, eliminating social pressure
@@ -17,7 +17,7 @@
 - **Next.js 15** with App Router (`/app` directory structure)
 - **React 19** with TypeScript
 - **Tailwind CSS 4** for styling
-- **Three.js + React Three Fiber** for 3D animations (BallBot fairy companion)
+- **Three.js + React Three Fiber** for 3D animations (BallBot rainbow JARVIS sphere)
 - **Zustand** for client-side state management
 - **SWR** for data fetching and caching
 
@@ -51,7 +51,7 @@ src/
 │   ├── diary/            # Diary pages
 │   └── components/       # Page-specific components
 ├── components/            # Shared components
-│   ├── BallBot.tsx       # 3D fairy companion
+│   ├── BallBot.tsx       # 3D rainbow JARVIS sphere
 │   ├── ConversationInterface.tsx  # Main chat UI
 │   ├── hooks/            # Custom React hooks
 │   └── ui/               # Reusable UI components
@@ -132,7 +132,7 @@ npm run lint          # Run ESLint
 
 ### Core Components
 - `ConversationInterface`: Main chat interface with 3D bot
-- `BallBot`: Three.js-based 3D fairy companion
+- `BallBot`: Three.js-based 3D rainbow JARVIS sphere
 - `VoiceRecorder`: Audio recording functionality
 - `ConversationTranscript`: Chat history display
 
@@ -152,8 +152,8 @@ npm run lint          # Run ESLint
 profiles (
   id uuid PRIMARY KEY,           -- Auth user ID
   display_name text,             -- User display name
-  fairy_name text NOT NULL,      -- AI companion name
-  fairy_img_url text NOT NULL,   -- AI companion avatar
+  sphere_name text NOT NULL,     -- AI sphere companion name
+  sphere_img_url text NOT NULL,  -- AI sphere companion avatar
   created_at timestamptz
 )
 
@@ -162,9 +162,9 @@ diaries (
   user_id uuid REFERENCES profiles(id),
   date date NOT NULL,            -- One entry per day
   user_text text NOT NULL,       -- User's journal entry
-  fairy_text text NOT NULL,      -- AI companion response
+  sphere_text text NOT NULL,     -- AI sphere companion response
   user_audio_url text,           -- Voice recording URL
-  fairy_audio_url text,          -- AI voice response URL
+  sphere_audio_url text,         -- AI sphere voice response URL
   visibility text DEFAULT 'friends',  -- 'friends' | 'private'
   UNIQUE(user_id, date)
 )
@@ -284,7 +284,7 @@ refactor: optimize conversation state management
 ### Working with AI Features
 - OpenAI responses should be contextual and warm
 - Audio transcription handles Japanese and English
-- TTS voices should be consistent with fairy personality
+- TTS voices should be consistent with rainbow JARVIS sphere personality
 - Always handle API rate limits gracefully
 
 ## Performance Considerations
