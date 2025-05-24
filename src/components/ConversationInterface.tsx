@@ -5,13 +5,15 @@ import Link from 'next/link';
 import { BallBot } from '@/components/BallBot';
 import { useRecorder } from '@/components/hooks/useRecorder';
 import { useConversation } from '@/components/hooks/useConversation';
+import { useTodayDiary } from '@/components/hooks/useTodayDiary';
 import { useConversationStore } from '@/stores/useConversationStore';
 import { useAudioStore } from '@/stores/useAudioStore';
 import ConversationTranscript from '@/components/ConversationTranscript';
 
 export default function ConversationInterface() {
   const { recording, start, stop } = useRecorder();
-  const { state, processConversation, startListening, stopConversation } = useConversation();
+  const { diaryId } = useTodayDiary();
+  const { state, processConversation, startListening, stopConversation } = useConversation(diaryId || undefined);
   const { setRecording, setLiveTranscript, error, setError } = useConversationStore();
   const { isSpeaking } = useAudioStore();
   
