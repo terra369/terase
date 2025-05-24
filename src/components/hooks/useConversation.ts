@@ -2,8 +2,9 @@ import { useCallback } from 'react';
 import { useConversationStore } from '@/stores/useConversationStore';
 import { useAudioStore } from '@/stores/useAudioStore';
 import { streamTTS } from '@/lib/openaiAudio';
+import { supabaseBrowser } from '@/lib/supabase/browser';
 
-export function useConversation() {
+export function useConversation(diaryId?: number) {
   const {
     state,
     setState,
@@ -16,8 +17,65 @@ export function useConversation() {
 
   const { setSpeaking } = useAudioStore();
 
-  // 音声をテキストに変換
-  const transcribeAudio = useCallback(async (audioBlob: Blob): Promise<string> => {
+  // Save message to diary_messages table
+  const saveMessageToDiary = useCallback(async (diaryId: number, role: 'user' | 'ai', text: string, audioUrl?: string, triggerAI = false) => {
+    try {
+      const response = await fetch('/api/diaries/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          diaryId,
+          role,
+          text,
+          audioUrl: audioUrl || null,
+          triggerAI
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('メッセージの保存に失敗しました');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error saving message to diary:', error);
+      throw error;
+    }
+  }, []);
+
+  // Create or get today's diary
+  const ensureTodayDiary = useCallback(async (transcript: string, audioPath: string) => {
+    try {
+      const today = new Date().toISOString().slice(0, 10);
+      
+      const response = await fetch('/api/actions/saveDiary', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          date: today,
+          text: transcript,
+          audioPath
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('日記の作成に失敗しました');
+      }
+
+      const { diaryId: newDiaryId } = await response.json();
+      return newDiaryId;
+    } catch (error) {
+      console.error('Error creating diary:', error);
+      throw error;
+    }
+  }, []);
+
+  // 音声をテキストに変換（音声アップロードも含む）
+  const transcribeAudio = useCallback(async (audioBlob: Blob): Promise<{ transcript: string; audioPath: string }> => {
     setState('transcribing');
     setError(null);
 
@@ -34,8 +92,8 @@ export function useConversation() {
         throw new Error('転写に失敗しました');
       }
 
-      const { transcript } = await response.json();
-      return transcript;
+      const { transcript, audioPath } = await response.json();
+      return { transcript, audioPath };
     } catch (error) {
       console.error('Transcription error:', error);
       setError('音声の文字起こしに失敗しました');
@@ -98,15 +156,15 @@ export function useConversation() {
     }
   }, [setState, setSpeaking, setError]);
 
-  // 完全な会話フロー：録音 → 転写 → AI応答 → 音声再生
+  // 完全な会話フロー：録音 → 転写 → diary保存 → AI応答 → 音声再生
   const processConversation = useCallback(async (audioBlob: Blob) => {
     try {
       setCurrentAudioBlob(audioBlob);
 
-      // 1. 転写
-      const transcript = await transcribeAudio(audioBlob);
+      // 1. 転写と音声アップロード
+      const { transcript, audioPath } = await transcribeAudio(audioBlob);
       
-      // ユーザーメッセージを追加
+      // ユーザーメッセージをローカルに追加
       addMessage({
         content: transcript,
         speaker: 'user'
@@ -115,31 +173,60 @@ export function useConversation() {
       // リアルタイム表示をクリア
       setLiveTranscript('');
 
-      // 2. AI応答生成
-      const aiResponse = await getAIResponse(transcript);
-      
-      // AIメッセージを追加
-      addMessage({
-        content: aiResponse,
-        speaker: 'ai'
-      });
+      // 2. 日記エントリーの作成/取得
+      let currentDiaryId = diaryId;
+      if (!currentDiaryId) {
+        currentDiaryId = await ensureTodayDiary(transcript, audioPath);
+      } else {
+        // 既存の日記にユーザーメッセージを保存してAIレスポンスをトリガー
+        setState('thinking');
+        const result = await saveMessageToDiary(currentDiaryId, 'user', transcript, audioPath, true);
+        
+        // Edge FunctionからのAI応答を取得
+        if (result.aiReply && result.aiReply.replyText) {
+          const aiResponse = result.aiReply.replyText;
+          
+          // AIメッセージをローカルストアに追加
+          addMessage({
+            content: aiResponse,
+            speaker: 'ai'
+          });
 
-      // 3. 音声再生
-      await speakAIResponse(aiResponse);
+          // 音声再生
+          await speakAIResponse(aiResponse);
+        } else {
+          // フォールバック: 従来のAI chat APIを使用
+          const aiResponse = await getAIResponse(transcript);
+          
+          addMessage({
+            content: aiResponse,
+            speaker: 'ai'
+          });
+
+          await saveMessageToDiary(currentDiaryId, 'ai', aiResponse);
+          await speakAIResponse(aiResponse);
+        }
+      }
 
     } catch (error) {
       console.error('Conversation processing error:', error);
-      // エラーは各関数内で設定済み
+      setError('会話の処理に失敗しました');
+      setState('idle');
     } finally {
       setCurrentAudioBlob(null);
     }
   }, [
+    diaryId,
     setCurrentAudioBlob,
     transcribeAudio,
     addMessage,
     setLiveTranscript,
+    ensureTodayDiary,
+    saveMessageToDiary,
     getAIResponse,
-    speakAIResponse
+    speakAIResponse,
+    setState,
+    setError
   ]);
 
   // 会話を開始
