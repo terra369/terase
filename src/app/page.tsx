@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation'
 import { supabaseServer } from "@/lib/supabase/server";
-import DiaryHeatmap from '@/app/components/DiaryHeatmap'
+import ConversationInterface from '@/components/ConversationInterface'
 
 export default async function Home() {
   const supabase = await supabaseServer()
@@ -8,11 +8,9 @@ export default async function Home() {
 
   if (!user) redirect('/login')
 
-  const today = new Date()
   return (
-    <main className="p-4">
-      <h1 className="mb-4 text-xl font-bold">My Gratitude Calendar</h1>
-      <DiaryHeatmap year={today.getFullYear()} month={today.getMonth() + 1} />
+    <main className="relative h-screen">
+      <ConversationInterface />
     </main>
   )
 }
