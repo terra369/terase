@@ -9,10 +9,8 @@ export function useConversation() {
     setState,
     messages,
     addMessage,
-    updateMessage,
     setLiveTranscript,
     setError,
-    currentAudioBlob,
     setCurrentAudioBlob
   } = useConversationStore();
 

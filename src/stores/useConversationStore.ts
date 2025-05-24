@@ -48,7 +48,7 @@ type ConversationStore = {
   setCurrentAudioBlob: (blob: Blob | null) => void;
 };
 
-export const useConversationStore = create<ConversationStore>((set, get) => ({
+export const useConversationStore = create<ConversationStore>((set) => ({
   // 初期状態
   state: 'idle',
   setState: (state) => set({ state }),
