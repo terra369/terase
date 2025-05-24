@@ -2,7 +2,6 @@ import { useCallback } from 'react';
 import { useConversationStore } from '@/stores/useConversationStore';
 import { useAudioStore } from '@/stores/useAudioStore';
 import { streamTTS } from '@/lib/openaiAudio';
-import { supabaseBrowser } from '@/lib/supabase/browser';
 
 export function useConversation(diaryId?: number) {
   const {

@@ -25,15 +25,15 @@ describe('Diary Messages Integration', () => {
           return {
             upsert: mockUpsert,
             select: mockSelect,
-          } as any
+          } as ReturnType<typeof supabaseBrowser.from>
         }
         if (table === 'diary_messages') {
           return {
             insert: mockInsert,
             select: vi.fn().mockReturnValue({ single: vi.fn() }),
-          } as any
+          } as ReturnType<typeof supabaseBrowser.from>
         }
-        return {} as any
+        return {} as ReturnType<typeof supabaseBrowser.from>
       })
 
       // Test diary creation with message
@@ -98,7 +98,7 @@ describe('Diary Messages Integration', () => {
 
       vi.mocked(supabaseBrowser.from).mockReturnValue({
         insert: mockInsert,
-      } as any)
+      } as ReturnType<typeof supabaseBrowser.from>)
 
       vi.mocked(supabaseBrowser.auth.getUser).mockImplementation(mockAuth)
 
@@ -132,30 +132,6 @@ describe('Diary Messages Integration', () => {
         role: 'user',
         text: mockTranscript
       }
-
-      // Mock OpenAI API
-      const mockOpenAI = {
-        chat: {
-          completions: {
-            create: vi.fn().mockResolvedValue({
-              choices: [{ message: { content: mockAiResponse } }]
-            })
-          }
-        }
-      }
-
-      // Mock Supabase storage
-      const mockStorage = {
-        createSignedUploadUrl: vi.fn().mockResolvedValue({
-          data: { path: 'ai-audio.mp3', token: 'test-token' }
-        })
-      }
-
-      // Mock database insert for AI message
-      const mockDBInsert = vi.fn().mockResolvedValue({
-        data: { id: 2 },
-        error: null
-      })
 
       // Test the Edge Function logic
       expect(userMessage.role).toBe('user')
@@ -198,24 +174,6 @@ describe('Diary Messages Integration', () => {
       
       const mockAudioBlob = new Blob(['audio data'], { type: 'audio/wav' })
       
-      // 1. Audio transcription
-      const mockTranscribeResponse = {
-        ok: true,
-        json: () => Promise.resolve({ transcript: mockTranscript })
-      }
-      
-      // 2. Save user message to diary_messages
-      const mockSaveUserMessage = vi.fn().mockResolvedValue({ ok: true })
-      
-      // 3. AI response generation
-      const mockAIResponse = {
-        ok: true,
-        json: () => Promise.resolve({ response: mockAiResponse })
-      }
-      
-      // 4. Save AI message to diary_messages
-      const mockSaveAIMessage = vi.fn().mockResolvedValue({ ok: true })
-
       // Verify the flow structure exists
       expect(mockAudioBlob).toBeDefined()
       expect(mockTranscript).toBeDefined()
