@@ -177,35 +177,21 @@ export function useConversation(diaryId?: number) {
       if (!currentDiaryId) {
         currentDiaryId = await ensureTodayDiary(transcript, audioPath);
       } else {
-        // 既存の日記にユーザーメッセージを保存してAIレスポンスをトリガー
-        setState('thinking');
-        const result = await saveMessageToDiary(currentDiaryId, 'user', transcript, audioPath, true);
-        
-        // Edge FunctionからのAI応答を取得
-        if (result.aiReply && result.aiReply.replyText) {
-          const aiResponse = result.aiReply.replyText;
-          
-          // AIメッセージをローカルストアに追加
-          addMessage({
-            content: aiResponse,
-            speaker: 'ai'
-          });
-
-          // 音声再生
-          await speakAIResponse(aiResponse);
-        } else {
-          // フォールバック: 従来のAI chat APIを使用
-          const aiResponse = await getAIResponse(transcript);
-          
-          addMessage({
-            content: aiResponse,
-            speaker: 'ai'
-          });
-
-          await saveMessageToDiary(currentDiaryId, 'ai', aiResponse);
-          await speakAIResponse(aiResponse);
-        }
+        // 既存の日記にユーザーメッセージを保存（AIレスポンスはDBトリガーで自動生成される）
+        await saveMessageToDiary(currentDiaryId, 'user', transcript, audioPath, false);
       }
+
+      // 3. AI応答の取得
+      const aiResponse = await getAIResponse(transcript);
+
+      // AIメッセージをローカルに追加
+      addMessage({
+        content: aiResponse,
+        speaker: 'ai'
+      });
+
+      // 4. AI応答を音声で再生
+      await speakAIResponse(aiResponse);
 
     } catch (error) {
       console.error('Conversation processing error:', error);
