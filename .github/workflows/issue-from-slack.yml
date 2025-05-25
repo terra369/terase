@@ -1,0 +1,27 @@
+name: Issue from Slack
+on:
+  workflow_dispatch:
+    inputs:
+      text:      # ← Zapier から流し込む
+        description: "Slack command payload"
+        required: true
+jobs:
+  make-issue:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write        # Issue 起票用
+      contents: write      # docs などの commit 用
+    steps:
+      - uses: actions/checkout@v4
+      - name: Ask Claude
+        uses: anthropics/claude-code-action@v1
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        with:
+          prompt: |
+            あなたはシニアPMです。
+            以下のテキストを「## 概要 / ## タスク一覧」のフォーマットで Issue に整形し、
+            labels: ["auto", "claude"] を付けて 1 件起票してください。
+
+            --- INPUT ---
+            ${{ github.event.inputs.text }}
