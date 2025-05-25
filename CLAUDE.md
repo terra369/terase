@@ -2,11 +2,11 @@
 
 ## 🎯 Project Overview
 
-**terase** is a gratitude journal SNS that pairs users with a personal AI fairy companion. It captures voice entries once a day and provides reflection through a calendar interface, emphasizing privacy-by-default and voice-first interactions.
+**terase** is a gratitude journal SNS that pairs users with a personal rainbow-colored JARVIS-style sphere companion. It captures voice entries once a day and provides reflection through a calendar interface, emphasizing privacy-by-default and voice-first interactions.
 
 ### ✨ Core Features
 
-- **🧚 AI Fairy Companion**: GPT-powered personal avatar with unique personality that asks reflective prompts and provides warm feedback
+- **🌈 Rainbow JARVIS Sphere**: GPT-powered personal avatar with unique personality that asks reflective prompts and provides warm feedback
 - **🎙️ Voice-first Journaling**: Record and transcribe daily gratitude using OpenAI Whisper + ElevenLabs TTS/STT
 - **📅 Calendar Interface**: Visual overview of streaks and past entries for habit reinforcement
 - **👥 Friend Peek Feature**: View friends' entries (24h window) only after posting your own, eliminating social pressure
@@ -30,7 +30,7 @@
   - Storage for audio files
   - Edge Functions for AI processing
 - **OpenAI API**: Whisper for transcription, GPT for AI responses
-- **ElevenLabs API**: Text-to-speech for AI fairy voice
+- **ElevenLabs API**: Text-to-speech for JARVIS sphere voice
 
 ### Development & CI/CD
 - **Vitest** for testing
@@ -51,7 +51,7 @@ terase/
 │   │   ├── diary/             # Diary management
 │   │   └── components/        # Page-specific components
 │   ├── components/            # Shared React components
-│   │   ├── BallBot.tsx        # 3D AI fairy bot
+│   │   ├── BallBot.tsx        # 3D rainbow JARVIS sphere
 │   │   ├── ConversationInterface.tsx  # Main voice UI
 │   │   ├── hooks/             # Custom React hooks
 │   │   └── ui/                # UI components
@@ -127,7 +127,7 @@ terase/
 - `POST /api/diaries/messages` - Save conversation message
 
 **AI Integration**
-- `POST /api/ai-chat` - Chat with AI fairy
+- `POST /api/ai-chat` - Chat with JARVIS sphere
 - `POST /api/transcribe` - Transcribe audio to text
 - `POST /api/tts` - Convert text to speech
 
@@ -331,7 +331,7 @@ Follow Conventional Commits:
 ### Design Principles
 - **Voice-first**: Primary interaction through speech
 - **Minimal**: Clean, distraction-free interface
-- **Emotional**: Warm, encouraging AI companion
+- **Emotional**: Warm, encouraging rainbow JARVIS sphere companion
 - **Private**: Clear privacy indicators and controls
 
 ### Component Library
