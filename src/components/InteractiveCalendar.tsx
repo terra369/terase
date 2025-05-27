@@ -199,10 +199,10 @@ export default function InteractiveCalendar({
 
   // Grid layout based on view mode
   const renderCalendarGrid = () => {
-    const gridCols = viewMode === 'month' ? 7 : viewMode === 'week' ? 7 : 1;
+    const gridColsClass = viewMode === 'month' ? 'grid-cols-7' : viewMode === 'week' ? 'grid-cols-7' : 'grid-cols-1';
     
     return (
-      <div className={`grid grid-cols-${gridCols} gap-2 mb-4`}>
+      <div className={`grid ${gridColsClass} gap-2 mb-4`}>
         {days.map((day) => {
           const dateStr = format(day, 'yyyy-MM-dd');
           const dayData = diaryData?.find(d => d.date === dateStr);

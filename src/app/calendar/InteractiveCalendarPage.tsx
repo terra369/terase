@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import InteractiveCalendar from '@/components/InteractiveCalendar';
 import ConversationReplay from '@/components/ConversationReplay';
+import CalendarSearch from '@/components/CalendarSearch';
 import useSWR from 'swr';
 
 interface InteractiveCalendarPageProps {
@@ -19,6 +20,7 @@ export default function InteractiveCalendarPage({ year, month }: InteractiveCale
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [showReplay, setShowReplay] = useState(false);
   const [replayDiaryId, setReplayDiaryId] = useState<number | null>(null);
+  const [showSearch, setShowSearch] = useState(false);
 
   const fetcher = (url: string): Promise<DiaryData[]> =>
     fetch(url).then((r) => r.json());
@@ -49,8 +51,35 @@ export default function InteractiveCalendarPage({ year, month }: InteractiveCale
     setShowReplay(false);
   };
 
+  const handleSearchResultClick = (date: string) => {
+    handleDateClick(date);
+    setShowSearch(false);
+  };
+
   return (
     <div className="space-y-6">
+      {/* Search Toggle */}
+      <div className="flex justify-end">
+        <button
+          onClick={() => setShowSearch(!showSearch)}
+          className={`
+            px-4 py-2 rounded-lg transition-colors flex items-center space-x-2
+            ${showSearch 
+              ? 'bg-gray-500 hover:bg-gray-600 text-white' 
+              : 'bg-blue-500 hover:bg-blue-600 text-white'
+            }
+          `}
+        >
+          <span>🔍</span>
+          <span>{showSearch ? 'Hide Search' : 'Search Diary'}</span>
+        </button>
+      </div>
+
+      {/* Search Panel */}
+      {showSearch && (
+        <CalendarSearch onResultClick={handleSearchResultClick} />
+      )}
+
       <InteractiveCalendar
         year={year}
         month={month}

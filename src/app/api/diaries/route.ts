@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
   const lastDay = new Date(y, m, 0).getDate();
   const { data, error } = await supabase
   .from('diary_messages')
-  .select('date:diaries!inner(date), count(*)', {
+  .select('date:diaries!inner(date, mood_emoji), count(*)', {
     count: 'exact',
     head:  false,
   })
