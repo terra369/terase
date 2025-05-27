@@ -60,11 +60,12 @@ export async function GET(req: NextRequest) {
 
     // Transform the results
     const results = data?.map((item: {
+      id: number;
       diary_id: number;
       role: string;
       text: string;
       created_at: string;
-      diaries: { date: string; mood_emoji?: string };
+      diaries: { date: string; user_id: string; mood_emoji?: string };
     }) => ({
       diary_id: item.diary_id,
       date: item.diaries.date,
