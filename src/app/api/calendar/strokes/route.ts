@@ -1,5 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseServer } from '@/lib/supabase/server';
+import { z } from 'zod';
+
+// Validation schemas
+const PathSchema = z.object({
+  x: z.number(),
+  y: z.number(),
+  pressure: z.number().optional()
+});
+
+const StrokeSchema = z.object({
+  id: z.string(),
+  paths: z.array(PathSchema),
+  color: z.string().regex(/^#[0-9A-F]{6}$/i).or(z.literal('transparent')),
+  thickness: z.number().min(1).max(50),
+  timestamp: z.number()
+});
+
+const StrokeDataSchema = z.object({
+  strokes: z.array(StrokeSchema)
+});
+
+const PostStrokeRequestSchema = z.object({
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  stroke_data: StrokeDataSchema
+});
 
 export async function GET(req: NextRequest) {
   const supabase = await supabaseServer();
@@ -53,16 +78,18 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const { date, stroke_data } = await req.json();
-
-    if (!date || !stroke_data) {
-      return NextResponse.json({ error: 'Missing date or stroke_data' }, { status: 400 });
+    const body = await req.json();
+    
+    // Validate request body with Zod
+    const parseResult = PostStrokeRequestSchema.safeParse(body);
+    if (!parseResult.success) {
+      return NextResponse.json({ 
+        error: 'Invalid request data', 
+        details: parseResult.error.issues 
+      }, { status: 400 });
     }
 
-    // Validate date format
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
-      return NextResponse.json({ error: 'Invalid date format' }, { status: 400 });
-    }
+    const { date, stroke_data } = parseResult.data;
 
     // Check if stroke data already exists for this date
     const { data: existingData, error: fetchError } = await supabase
@@ -131,11 +158,18 @@ export async function PUT(req: NextRequest) {
   }
 
   try {
-    const { date, stroke_data } = await req.json();
-
-    if (!date || !stroke_data) {
-      return NextResponse.json({ error: 'Missing date or stroke_data' }, { status: 400 });
+    const body = await req.json();
+    
+    // Validate request body with Zod
+    const parseResult = PostStrokeRequestSchema.safeParse(body);
+    if (!parseResult.success) {
+      return NextResponse.json({ 
+        error: 'Invalid request data', 
+        details: parseResult.error.issues 
+      }, { status: 400 });
     }
+
+    const { date, stroke_data } = parseResult.data;
 
     // Replace entire stroke data for the date
     const { data, error } = await supabase

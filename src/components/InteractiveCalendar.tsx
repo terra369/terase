@@ -197,6 +197,30 @@ export default function InteractiveCalendar({
     router.push(`/diary/${date}?replay=true`);
   }, [router]);
 
+  // Cleanup canvas context and resources on unmount or date change
+  useEffect(() => {
+    return () => {
+      // Cleanup canvas context
+      const canvas = canvasRef.current;
+      if (canvas) {
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+      }
+    };
+  }, [selectedDate]);
+
+  // Cleanup any ongoing drawing operations on unmount
+  useEffect(() => {
+    return () => {
+      if (isDrawing) {
+        setIsDrawing(false);
+        setCurrentStroke(null);
+      }
+    };
+  }, []);
+
   // Grid layout based on view mode
   const renderCalendarGrid = () => {
     const gridColsClass = viewMode === 'month' ? 'grid-cols-7' : viewMode === 'week' ? 'grid-cols-7' : 'grid-cols-1';

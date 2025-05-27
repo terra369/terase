@@ -30,9 +30,11 @@ export async function GET(req: NextRequest) {
       .eq('diaries.user_id', user.id)
       .order('diaries.date', { ascending: false });
 
-    // Apply text search filter
+    // Apply text search filter with sanitization
     if (query.length >= 2) {
-      sqlQuery = sqlQuery.ilike('text', `%${query}%`);
+      // Sanitize query to prevent SQL injection by escaping special characters
+      const sanitizedQuery = query.replace(/[%_\\]/g, '\\$&');
+      sqlQuery = sqlQuery.ilike('text', `%${sanitizedQuery}%`);
     }
 
     // Apply emotion filter
