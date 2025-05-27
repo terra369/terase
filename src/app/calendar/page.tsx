@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation'
 import { supabaseServer } from "@/lib/supabase/server";
-import DiaryHeatmap from '@/app/components/DiaryHeatmap'
+import InteractiveCalendarPage from './InteractiveCalendarPage'
 import Link from 'next/link'
 
 export default async function Calendar() {
@@ -21,7 +21,7 @@ export default async function Calendar() {
           AIと話す
         </Link>
       </div>
-      <DiaryHeatmap year={today.getFullYear()} month={today.getMonth() + 1} />
+      <InteractiveCalendarPage year={today.getFullYear()} month={today.getMonth() + 1} />
     </main>
   )
 }
