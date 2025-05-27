@@ -3,7 +3,7 @@ import { supabaseServer } from '@/lib/supabase/server';
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { diaryId: string } }
+  { params }: { params: Promise<{ diaryId: string }> }
 ) {
   const supabase = await supabaseServer();
   const { data: { user } } = await supabase.auth.getUser();
@@ -12,7 +12,8 @@ export async function GET(
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const diaryId = parseInt(params.diaryId);
+  const { diaryId: diaryIdParam } = await params;
+  const diaryId = parseInt(diaryIdParam);
   
   if (isNaN(diaryId)) {
     return NextResponse.json({ error: 'Invalid diary ID' }, { status: 400 });
