@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import useSWR from 'swr';
 import { format } from 'date-fns';
 
@@ -51,7 +51,7 @@ export default function ConversationReplay({
     }
 
     const currentMessage = messages[currentMessageIndex];
-    let delay = 2000; // Default 2 seconds between messages
+    const delay = 2000; // Default 2 seconds between messages
 
     // If message has audio, play it and wait for completion
     if (currentMessage.audio_url) {

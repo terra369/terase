@@ -59,7 +59,13 @@ export async function GET(req: NextRequest) {
     }
 
     // Transform the results
-    const results = data?.map((item: any) => ({
+    const results = data?.map((item: {
+      diary_id: number;
+      role: string;
+      text: string;
+      created_at: string;
+      diaries: { date: string; mood_emoji?: string };
+    }) => ({
       diary_id: item.diary_id,
       date: item.diaries.date,
       role: item.role,
@@ -70,7 +76,15 @@ export async function GET(req: NextRequest) {
 
     // If we have a text query, add highlighting information
     if (query.length >= 2) {
-      results.forEach((result: any) => {
+      results.forEach((result: {
+        diary_id: number;
+        date: string;
+        role: string;
+        text: string;
+        created_at: string;
+        mood_emoji?: string;
+        highlight?: string;
+      }) => {
         const index = result.text.toLowerCase().indexOf(query.toLowerCase());
         if (index !== -1) {
           // Extract context around the match

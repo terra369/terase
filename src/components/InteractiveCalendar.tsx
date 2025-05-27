@@ -1,8 +1,8 @@
 'use client';
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import useSWR from 'swr';
-import { format, eachDayOfInterval, startOfMonth, endOfMonth, isSameDay } from 'date-fns';
+import { format, eachDayOfInterval, startOfMonth, endOfMonth } from 'date-fns';
 
 interface DiaryData {
   date: string;

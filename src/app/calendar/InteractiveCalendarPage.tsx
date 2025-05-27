@@ -1,5 +1,5 @@
 'use client';
-import React, { useState } from 'react';
+import { useState } from 'react';
 import InteractiveCalendar from '@/components/InteractiveCalendar';
 import ConversationReplay from '@/components/ConversationReplay';
 import CalendarSearch from '@/components/CalendarSearch';
