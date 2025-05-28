@@ -34,7 +34,17 @@ export function useConversation(diaryId?: number) {
       });
 
       if (!response.ok) {
-        throw new Error('メッセージの保存に失敗しました');
+        let errorDetail = 'メッセージの保存に失敗しました';
+        try {
+          const errorBody = await response.json();
+          console.error('Failed to save message. API response:', errorBody);
+          if (errorBody && errorBody.error) {
+            errorDetail = typeof errorBody.error === 'string' ? errorBody.error : JSON.stringify(errorBody.error);
+          }
+        } catch (e) {
+          console.error('Failed to parse error response body:', e);
+        }
+        throw new Error(errorDetail);
       }
 
       return await response.json();
@@ -62,7 +72,17 @@ export function useConversation(diaryId?: number) {
       });
 
       if (!response.ok) {
-        throw new Error('日記の作成に失敗しました');
+        let errorDetail = '日記の作成に失敗しました';
+        try {
+          const errorBody = await response.json();
+          console.error('Failed to create diary. API response:', errorBody);
+          if (errorBody && errorBody.error) {
+            errorDetail = typeof errorBody.error === 'string' ? errorBody.error : JSON.stringify(errorBody.error);
+          }
+        } catch (e) {
+          console.error('Failed to parse error response body:', e);
+        }
+        throw new Error(errorDetail);
       }
 
       const { diaryId: newDiaryId } = await response.json();
@@ -88,7 +108,17 @@ export function useConversation(diaryId?: number) {
       });
 
       if (!response.ok) {
-        throw new Error('転写に失敗しました');
+        let errorDetail = '転写に失敗しました';
+        try {
+          const errorBody = await response.json();
+          console.error('Failed to transcribe audio. API response:', errorBody);
+          if (errorBody && errorBody.error) {
+            errorDetail = typeof errorBody.error === 'string' ? errorBody.error : JSON.stringify(errorBody.error);
+          }
+        } catch (e) {
+          console.error('Failed to parse error response body:', e);
+        }
+        throw new Error(errorDetail);
       }
 
       const { transcript, audioPath } = await response.json();
@@ -125,7 +155,17 @@ export function useConversation(diaryId?: number) {
       });
 
       if (!response.ok) {
-        throw new Error('AI応答の生成に失敗しました');
+        let errorDetail = 'AI応答の生成に失敗しました';
+        try {
+          const errorBody = await response.json();
+          console.error('Failed to get AI response. API response:', errorBody);
+          if (errorBody && errorBody.error) {
+            errorDetail = typeof errorBody.error === 'string' ? errorBody.error : JSON.stringify(errorBody.error);
+          }
+        } catch (e) {
+          console.error('Failed to parse error response body:', e);
+        }
+        throw new Error(errorDetail);
       }
 
       const { response: aiResponse } = await response.json();
