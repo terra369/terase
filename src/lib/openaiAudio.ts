@@ -5,7 +5,7 @@
 
 import { useAudioStore } from '@/stores/useAudioStore';
 
-export async function streamTTS(text: string) {
+export async function streamTTS(text: string, onProgress?: (progress: number) => void) {
   try {
     // サーバーサイドAPIエンドポイントを呼び出す
     const response = await fetch('/api/tts', {
@@ -33,9 +33,25 @@ export async function streamTTS(text: string) {
     const { setSpeaking } = useAudioStore.getState();
     setSpeaking(true);
     
+    // プログレス更新用のタイマー
+    let progressInterval: NodeJS.Timeout | null = null;
+    
     // 再生のイベントリスナー
+    audio.onloadedmetadata = () => {
+      if (onProgress && audio.duration) {
+        progressInterval = setInterval(() => {
+          const progress = (audio.currentTime / audio.duration) * 100;
+          onProgress(progress);
+        }, 50);
+      }
+    };
+    
     audio.onended = () => {
       setSpeaking(false);
+      if (progressInterval) {
+        clearInterval(progressInterval);
+        onProgress?.(100);
+      }
     };
     
     // 再生開始
@@ -48,6 +64,9 @@ export async function streamTTS(text: string) {
       stop: () => {
         audio.pause();
         setSpeaking(false);
+        if (progressInterval) {
+          clearInterval(progressInterval);
+        }
       }
     };
   } catch (error) {

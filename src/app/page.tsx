@@ -1,6 +1,5 @@
 import { redirect } from 'next/navigation'
 import { supabaseServer } from "@/lib/supabase/server";
-import ConversationInterface from '@/components/ConversationInterface'
 import MobileConversationInterface from '@/components/MobileConversationInterface'
 
 export default async function Home() {
@@ -9,17 +8,5 @@ export default async function Home() {
 
   if (!user) redirect('/login')
 
-  return (
-    <main className="relative h-screen">
-      {/* Mobile interface for small screens */}
-      <div className="block md:hidden">
-        <MobileConversationInterface />
-      </div>
-      
-      {/* Desktop interface for larger screens */}
-      <div className="hidden md:block">
-        <ConversationInterface />
-      </div>
-    </main>
-  )
+  return <MobileConversationInterface />
 }

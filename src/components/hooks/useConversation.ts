@@ -185,7 +185,10 @@ export function useConversation(diaryId?: number) {
     setError(null);
 
     try {
-      await streamTTS(text);
+      await streamTTS(text, () => {
+        // Progress callback removed as we're not tracking it anymore
+      });
+      
     } catch (error) {
       console.error('TTS error:', error);
       setError('音声の再生に失敗しました');

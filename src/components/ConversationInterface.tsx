@@ -8,7 +8,6 @@ import { useConversation } from '@/components/hooks/useConversation';
 import { useTodayDiary } from '@/components/hooks/useTodayDiary';
 import { useConversationStore } from '@/stores/useConversationStore';
 import { useAudioStore } from '@/stores/useAudioStore';
-import ConversationTranscript from '@/components/ConversationTranscript';
 
 export default function ConversationInterface() {
   const { recording, start, stop } = useRecorder();
@@ -16,7 +15,7 @@ export default function ConversationInterface() {
   const { state, processConversation, startListening, stopConversation } = useConversation(diaryId || undefined);
   const { setRecording, setLiveTranscript, error, setError } = useConversationStore();
   const { isSpeaking } = useAudioStore();
-  
+
   const [isInitialized, setIsInitialized] = useState(false);
 
   // 録音状態をストアと同期
@@ -90,7 +89,7 @@ export default function ConversationInterface() {
 
       {/* ナビゲーション */}
       <div className="absolute top-4 left-4 z-10">
-        <Link 
+        <Link
           href="/calendar"
           className="px-4 py-2 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 transition-colors"
         >
@@ -103,22 +102,21 @@ export default function ConversationInterface() {
         <div className="bg-white dark:bg-gray-800 rounded-full px-6 py-3 shadow-lg border border-gray-200 dark:border-gray-700">
           <div className="flex items-center space-x-3">
             {/* 状態インジケーター */}
-            <div className={`w-3 h-3 rounded-full ${
-              state === 'idle' ? 'bg-gray-400' :
-              state === 'listening' ? 'bg-red-500 animate-pulse' :
-              state === 'transcribing' ? 'bg-yellow-500 animate-pulse' :
-              state === 'thinking' ? 'bg-blue-500 animate-pulse' :
-              state === 'speaking' ? 'bg-green-500 animate-pulse' :
-              'bg-gray-400'
-            }`}></div>
-            
+            <div className={`w-3 h-3 rounded-full ${state === 'idle' ? 'bg-gray-400' :
+                state === 'listening' ? 'bg-red-500 animate-pulse' :
+                  state === 'transcribing' ? 'bg-yellow-500 animate-pulse' :
+                    state === 'thinking' ? 'bg-blue-500 animate-pulse' :
+                      state === 'speaking' ? 'bg-green-500 animate-pulse' :
+                        'bg-gray-400'
+              }`}></div>
+
             {/* 状態テキスト */}
             <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
               {state === 'idle' && '待機中'}
               {state === 'listening' && '録音中...'}
               {state === 'transcribing' && '文字起こし中...'}
-              {state === 'thinking' && 'AI が考え中...'}
-              {state === 'speaking' && 'AI が話し中...'}
+              {state === 'thinking' && 'terase が考え中...'}
+              {state === 'speaking' && 'terase が話し始めます...'}
             </span>
           </div>
         </div>
@@ -144,18 +142,17 @@ export default function ConversationInterface() {
       {/* メイン操作エリア */}
       <div className="absolute bottom-0 left-0 right-0 p-8 z-10">
         <div className="flex flex-col items-center space-y-6">
-          
+
           {/* 録音ボタン */}
           <button
             onClick={handleToggleRecording}
             disabled={isProcessing || isSpeaking}
-            className={`w-20 h-20 rounded-full flex items-center justify-center transition-all transform hover:scale-105 active:scale-95 shadow-lg ${
-              recording
+            className={`w-20 h-20 rounded-full flex items-center justify-center transition-all transform hover:scale-105 active:scale-95 shadow-lg ${recording
                 ? 'bg-red-500 hover:bg-red-600 animate-pulse'
                 : isActive || isSpeaking
-                ? 'bg-gray-400 cursor-not-allowed'
-                : 'bg-blue-500 hover:bg-blue-600'
-            }`}
+                  ? 'bg-gray-400 cursor-not-allowed'
+                  : 'bg-blue-500 hover:bg-blue-600'
+              }`}
           >
             {recording ? (
               <div className="w-8 h-8 bg-white rounded-sm"></div>
@@ -190,8 +187,6 @@ export default function ConversationInterface() {
         </div>
       </div>
 
-      {/* 会話履歴 */}
-      <ConversationTranscript />
     </div>
   );
 }
