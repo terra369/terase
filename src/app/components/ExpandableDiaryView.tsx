@@ -21,7 +21,6 @@ interface ExpandableDiaryViewProps {
   selectedDate: string
   diaryId?: number
   initialMessages: DiaryMessage[]
-  onClose?: () => void
 }
 
 // Chat input component
@@ -83,8 +82,7 @@ const AudioPlayerWithReactive = ({ src }: { src: string }) => {
 export default function ExpandableDiaryView({ 
   selectedDate, 
   diaryId, 
-  initialMessages,
-  onClose 
+  initialMessages
 }: ExpandableDiaryViewProps) {
   const [isExpanded, setIsExpanded] = useState(false)
   const [messages, setMessages] = useState<DiaryMessage[]>(initialMessages)

@@ -2,7 +2,6 @@
 
 import { useState, useMemo } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
-import { useRouter } from 'next/navigation'
 import useSWR from 'swr'
 import { format, eachDayOfInterval, startOfMonth, endOfMonth, startOfWeek, endOfWeek, isSameMonth, isSameDay } from 'date-fns'
 
@@ -18,7 +17,6 @@ interface CalendarProps {
 }
 
 export default function Calendar({ selectedDate, onDateSelect }: CalendarProps) {
-  const router = useRouter()
   const [currentDate, setCurrentDate] = useState(selectedDate || new Date())
   
   const year = currentDate.getFullYear()
