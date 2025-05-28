@@ -65,14 +65,14 @@ export async function GET(req: NextRequest) {
       role: string;
       text: string;
       created_at: string;
-      diaries: { date: string; user_id: string; mood_emoji?: string };
+      diaries: { date: string; user_id: string; mood_emoji?: string }[];
     }) => ({
       diary_id: item.diary_id,
-      date: item.diaries.date,
+      date: item.diaries[0]?.date,
       role: item.role,
       text: item.text,
       created_at: item.created_at,
-      mood_emoji: item.diaries.mood_emoji
+      mood_emoji: item.diaries[0]?.mood_emoji
     })) || [];
 
     // If we have a text query, add highlighting information
