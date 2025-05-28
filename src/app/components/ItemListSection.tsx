@@ -39,7 +39,7 @@ export default function ItemListSection({ selectedDate }: ItemListSectionProps) 
     )
   }
 
-  const handleItemClick = (message: DiaryMessage) => {
+  const handleItemClick = () => {
     // Navigate to diary detail page or play audio
     if (selectedDate) {
       router.push(`/diary/${selectedDate}`)
@@ -102,7 +102,7 @@ export default function ItemListSection({ selectedDate }: ItemListSectionProps) 
                 </div>
               </div>
 
-              <button onClick={() => handleItemClick(message)}>
+              <button onClick={() => handleItemClick()}>
                 <ChevronRight size={16} className="text-gray-400" />
               </button>
             </CardContent>
