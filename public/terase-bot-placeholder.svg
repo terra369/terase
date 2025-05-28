@@ -1,0 +1,97 @@
+<svg width="200" height="200" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Outer orbit ring -->
+  <circle cx="100" cy="100" r="90" stroke="#c7c7cc" stroke-width="2" fill="none" opacity="0.3">
+    <animateTransform
+      attributeName="transform"
+      attributeType="XML"
+      type="rotate"
+      from="0 100 100"
+      to="360 100 100"
+      dur="10s"
+      repeatCount="indefinite"/>
+  </circle>
+  
+  <!-- Middle orbit ring -->
+  <circle cx="100" cy="100" r="70" stroke="#8e8e93" stroke-width="2" fill="none" opacity="0.5">
+    <animateTransform
+      attributeName="transform"
+      attributeType="XML"
+      type="rotate"
+      from="0 100 100"
+      to="-360 100 100"
+      dur="7s"
+      repeatCount="indefinite"/>
+  </circle>
+  
+  <!-- Inner orbit ring -->
+  <circle cx="100" cy="100" r="50" stroke="#007aff" stroke-width="2" fill="none" opacity="0.7">
+    <animateTransform
+      attributeName="transform"
+      attributeType="XML"
+      type="rotate"
+      from="0 100 100"
+      to="360 100 100"
+      dur="5s"
+      repeatCount="indefinite"/>
+  </circle>
+  
+  <!-- Central sphere with gradient -->
+  <defs>
+    <radialGradient id="sphereGradient" cx="0.3" cy="0.3" r="0.7">
+      <stop offset="0%" style="stop-color:#ffffff;stop-opacity:0.8" />
+      <stop offset="50%" style="stop-color:#007aff;stop-opacity:0.9" />
+      <stop offset="100%" style="stop-color:#0056d6;stop-opacity:1" />
+    </radialGradient>
+  </defs>
+  
+  <!-- Central core -->
+  <circle cx="100" cy="100" r="25" fill="url(#sphereGradient)">
+    <animate attributeName="r" values="25;30;25" dur="3s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="0.8;1;0.8" dur="3s" repeatCount="indefinite"/>
+  </circle>
+  
+  <!-- Orbiting particles -->
+  <circle cx="170" cy="100" r="3" fill="#ff3b30" opacity="0.7">
+    <animateTransform
+      attributeName="transform"
+      attributeType="XML"
+      type="rotate"
+      from="0 100 100"
+      to="360 100 100"
+      dur="10s"
+      repeatCount="indefinite"/>
+  </circle>
+  
+  <circle cx="30" cy="100" r="3" fill="#34c759" opacity="0.7">
+    <animateTransform
+      attributeName="transform"
+      attributeType="XML"
+      type="rotate"
+      from="180 100 100"
+      to="540 100 100"
+      dur="10s"
+      repeatCount="indefinite"/>
+  </circle>
+  
+  <circle cx="100" cy="30" r="3" fill="#ff9500" opacity="0.7">
+    <animateTransform
+      attributeName="transform"
+      attributeType="XML"
+      type="rotate"
+      from="270 100 100"
+      to="630 100 100"
+      dur="10s"
+      repeatCount="indefinite"/>
+  </circle>
+  
+  <circle cx="100" cy="170" r="3" fill="#af52de" opacity="0.7">
+    <animateTransform
+      attributeName="transform"
+      attributeType="XML"
+      type="rotate"
+      from="90 100 100"
+      to="450 100 100"
+      dur="10s"
+      repeatCount="indefinite"/>
+  </circle>
+</svg>
