@@ -114,8 +114,7 @@ export default function ConversationInterface() {
             <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
               {state === 'idle' && '待機中'}
               {state === 'listening' && '録音中...'}
-              {state === 'transcribing' && '文字起こし中...'}
-              {state === 'thinking' && 'terase が考え中...'}
+              {(state === 'transcribing' || state === 'thinking') && 'terase が考え中...'}
               {state === 'speaking' && 'terase が話し始めます...'}
             </span>
           </div>
@@ -179,8 +178,7 @@ export default function ConversationInterface() {
             <p className="text-sm text-gray-600 dark:text-gray-400">
               {state === 'idle' && 'ボタンを押して話しかけてください'}
               {state === 'listening' && 'お話しください...'}
-              {state === 'transcribing' && '音声を文字に変換しています...'}
-              {state === 'thinking' && 'AI が応答を考えています...'}
+              {(state === 'transcribing' || state === 'thinking') && 'terase が考え中...'}
               {state === 'speaking' && 'AI が話しています...'}
             </p>
           </div>

@@ -98,8 +98,7 @@ export default function MobileConversationInterface() {
         {/* Processing status text */}
         {(isProcessing || isSpeaking) && !recording && (
           <div className="absolute bottom-[180px] md:bottom-[220px] lg:bottom-[280px] left-1/2 transform -translate-x-1/2 font-bold text-[#ec6a52] text-[13px] md:text-base lg:text-lg text-center tracking-[0] leading-normal">
-            {state === 'transcribing' && '文字起こし中...'}
-            {state === 'thinking' && 'terase が考え中...'}
+            {(state === 'transcribing' || state === 'thinking') && 'terase が考え中...'}
             {state === 'speaking' && 'terase が話し始めます...'}
           </div>
         )}

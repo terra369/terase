@@ -1,10 +1,8 @@
 'use client';
 
-import { useState, useCallback, useEffect, useRef, Suspense } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { supabaseBrowser } from '@/lib/supabase/browser';
 import { useDiaryRealtime } from '@/lib/useDiaryRealtime';
-import { Canvas } from '@react-three/fiber';
-import { BallBot } from '@/components/BallBot';
 import { useAudioReactive } from '@/components/hooks/useAudioReactive';
 
 type Msg = {
@@ -150,17 +148,6 @@ export default function DiaryDetailClient(
 
     return (
         <div className="space-y-4 relative">
-            {/* 3D Visualization */}
-            <div className="h-60 w-full rounded-lg overflow-hidden mb-4 border border-blue-100 dark:border-blue-900 shadow-md">
-                <Canvas camera={{ position: [0, 0, 3] }}>
-                    <Suspense fallback={null}>
-                        <BallBot />
-                        {/* eslint-disable-next-line react/no-unknown-property */}
-                        <ambientLight intensity={0.4} />
-                    </Suspense>
-                </Canvas>
-            </div>
-
             {/* Chat messages */}
             <div className="space-y-4 max-h-[50vh] overflow-y-auto p-2">
                 {messages.map((m) => (
