@@ -29,7 +29,7 @@ export default function ConversationReplay({
   const [playbackSpeed, setPlaybackSpeed] = useState(1);
   const [currentAudio, setCurrentAudio] = useState<HTMLAudioElement | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const timeoutRef = useRef<NodeJS.Timeout>();
+  const timeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
 
   const fetcher = (url: string): Promise<DiaryMessage[]> =>
     fetch(url).then((r) => r.json());
