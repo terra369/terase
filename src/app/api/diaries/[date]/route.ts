@@ -13,12 +13,28 @@ export async function GET(
 
   const { data, error } = await supabase
     .from('diaries')
-    .select('id, visibility, diary_messages(*)')
+    .select('id, date, visibility, diary_messages(*)')
     .eq('date', date)
     .single();
 
-  if (error || !data)
-    return new NextResponse(error?.message ?? 'not found', { status: 404 });
+  if (error) {
+    // If no diary found, return empty data instead of 404
+    if (error.code === 'PGRST116') {
+      return NextResponse.json({
+        id: null,
+        date: date,
+        messages: []
+      });
+    }
+    return new NextResponse(error.message, { status: 500 });
+  }
 
-  return NextResponse.json(data);
+  // Format the response to match the expected structure
+  const formattedData = {
+    id: data.id,
+    date: data.date,
+    messages: data.diary_messages || []
+  };
+
+  return NextResponse.json(formattedData);
 }

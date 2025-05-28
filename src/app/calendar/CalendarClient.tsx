@@ -1,15 +1,46 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { ArrowLeft } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { format } from 'date-fns'
 import Calendar from '@/app/components/Calendar'
-import ItemListSection from '@/app/components/ItemListSection'
+import ExpandableDiaryView from '@/app/components/ExpandableDiaryView'
+import useSWR from 'swr'
+
+interface DiaryMessage {
+  id: number
+  role: 'user' | 'ai'
+  text: string
+  audio_url?: string
+  created_at: string
+}
+
+interface DiaryData {
+  id: number
+  date: string
+  messages: DiaryMessage[]
+}
 
 export default function CalendarClient() {
   const router = useRouter()
   const [selectedDate, setSelectedDate] = useState<Date>(new Date())
+
+  const fetcher = async (url: string): Promise<DiaryData | null> => {
+    const response = await fetch(url)
+    if (!response.ok) return null
+    return response.json()
+  }
+
+  const formattedDate = format(selectedDate, 'yyyy-MM-dd')
+  const { data: diaryData } = useSWR<DiaryData | null>(
+    `/api/diaries/${formattedDate}`,
+    fetcher,
+    {
+      revalidateOnFocus: false,
+      shouldRetryOnError: false
+    }
+  )
 
   const handleDateSelect = (date: Date) => {
     setSelectedDate(date)
@@ -43,11 +74,23 @@ export default function CalendarClient() {
             />
           </div>
 
-          {/* Item List Section */}
+          {/* Diary Content Section */}
           <div className="w-full px-4 pb-6">
-            <ItemListSection 
-              selectedDate={format(selectedDate, 'yyyy-MM-dd')}
-            />
+            {diaryData && diaryData.messages.length > 0 ? (
+              <ExpandableDiaryView
+                selectedDate={formattedDate}
+                diaryId={diaryData.id}
+                initialMessages={diaryData.messages}
+              />
+            ) : (
+              <div className="flex flex-col w-full items-center justify-center gap-4 py-8">
+                <p className="text-[#212121] text-center font-['Euclid_Circular_B-Regular']">
+                  {formattedDate === format(new Date(), 'yyyy-MM-dd') 
+                    ? '今日はまだ日記がありません' 
+                    : 'この日の日記はありません'}
+                </p>
+              </div>
+            )}
           </div>
         </main>
       </div>

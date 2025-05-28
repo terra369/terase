@@ -64,8 +64,6 @@ export default function Calendar({ selectedDate, onDateSelect }: CalendarProps) 
     if (onDateSelect) {
       onDateSelect(date)
     }
-    const dateStr = format(date, 'yyyy-MM-dd')
-    router.push(`/diary/${dateStr}`)
   }
 
   // Split days into weeks
