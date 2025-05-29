@@ -4,13 +4,7 @@
  */
 
 import { useAudioStore } from '@/stores/useAudioStore';
-
-const AUDIO_PERMISSION_KEY = 'terase_audio_permission_granted';
-
-function isAudioPermissionGranted(): boolean {
-  if (typeof window === 'undefined') return false;
-  return localStorage.getItem(AUDIO_PERMISSION_KEY) === 'true';
-}
+import { ensureAudioContextRunning } from '@/lib/audioContext';
 
 export async function streamTTS(text: string, onProgress?: (progress: number) => void) {
   try {
@@ -61,69 +55,17 @@ export async function streamTTS(text: string, onProgress?: (progress: number) =>
       }
     };
     
-    // 再生開始（モバイル対応）
-    // 既に許可が与えられている場合は直接再生（確認なし）
-    if (isAudioPermissionGranted()) {
-      try {
-        await audio.play();
-        return {
-          audio,
-          blob: () => blob,
-          stop: () => {
-            audio.pause();
-            setSpeaking(false);
-            if (progressInterval) {
-              clearInterval(progressInterval);
-            }
-          }
-        };
-      } catch (error) {
-        console.error('Audio play failed despite permission granted:', error);
-        // 許可されているはずなのに失敗した場合の処理
-        if (error instanceof Error && (['NotAllowedError', 'NotSupportedError'].includes(error.name))) {
-          // 明確に許可関連のエラーの場合のみ許可状態をリセット
-          console.warn('Permission-related error occurred, resetting permission state');
-          localStorage.removeItem(AUDIO_PERMISSION_KEY);
-          // AutoplayManagerにオーディオ再生要求を送信
-          const event = new CustomEvent('audioPlayRequest', { detail: audio });
-          window.dispatchEvent(event);
-          // 発話状態は維持（ユーザーがタップするまで待機）
-          setSpeaking(true);
-        } else {
-          // その他のエラー（ネットワークエラーなど）の場合は許可状態は維持し、静かに失敗
-          console.warn('Audio playback failed with non-permission error, maintaining permission state');
-          setSpeaking(false);
-        }
-        return {
-          audio,
-          blob: () => blob,
-          stop: () => {
-            audio.pause();
-            setSpeaking(false);
-            if (progressInterval) {
-              clearInterval(progressInterval);
-            }
-          }
-        };
-      }
-    }
-
+    // 再生開始（初回同意後は直接再生）
     try {
+      // AudioContextが正常に動作しているか確認
+      await ensureAudioContextRunning();
       await audio.play();
-      // 初回再生成功時に許可状態を保存
-      localStorage.setItem(AUDIO_PERMISSION_KEY, 'true');
     } catch (error) {
-      if (error instanceof Error && (['NotAllowedError', 'NotSupportedError', 'AbortError'].includes(error.name))) {
-        console.warn('Audio autoplay blocked by browser policy. Requesting user interaction...', error.name);
-        // AutoplayManagerにオーディオ再生要求を送信
-        const event = new CustomEvent('audioPlayRequest', { detail: audio });
-        window.dispatchEvent(event);
-        
-        // 発話状態は維持（ユーザーがタップするまで待機）
-        setSpeaking(true);
-      } else {
-        throw error;
-      }
+      console.error('Audio play failed after consent:', error);
+      // AutoplayManagerにオーディオ再生要求を送信（フォールバック）
+      const event = new CustomEvent('audioPlayRequest', { detail: audio });
+      window.dispatchEvent(event);
+      setSpeaking(true);
     }
     
     // コントロール用のオブジェクトを返す
