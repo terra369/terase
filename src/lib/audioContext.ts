@@ -71,24 +71,47 @@ export async function handleFirstUserInteraction(): Promise<boolean> {
     const audioContext = await initializeAudioContext()
     if (!audioContext) return false
     
-    // 成功したら権限を記録
-    setAudioContextPermissionGranted()
+    // iOS Safariの検出
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream
+    const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent)
     
-    // ダミーの音声を再生してブラウザの音声許可を確実にする（モバイル対応）
+    // ダミーの音声を再生してブラウザの音声許可を確実にする
     const oscillator = audioContext.createOscillator()
     const gainNode = audioContext.createGain()
     
     oscillator.connect(gainNode)
     gainNode.connect(audioContext.destination)
     
-    // 無音に近い音量で短時間再生（モバイルでも確実に動作するように少し長めに）
-    gainNode.gain.setValueAtTime(0.001, audioContext.currentTime)
+    // iOS Safariでは少し長めの再生時間と音量を設定
+    const duration = isIOS && isSafari ? 0.25 : 0.1
+    const volume = isIOS && isSafari ? 0.01 : 0.001
+    
+    gainNode.gain.setValueAtTime(volume, audioContext.currentTime)
     oscillator.frequency.setValueAtTime(440, audioContext.currentTime)
     oscillator.start(audioContext.currentTime)
-    oscillator.stop(audioContext.currentTime + 0.1) // 0.1秒に延長
+    oscillator.stop(audioContext.currentTime + duration)
     
-    // モバイルブラウザでの確実な初期化のため少し待機
-    await new Promise(resolve => setTimeout(resolve, 50))
+    // iOS Safariでは長めに待機
+    const waitTime = isIOS && isSafari ? 200 : 50
+    await new Promise(resolve => setTimeout(resolve, waitTime))
+    
+    // iOS Safariでは追加の確認を行う
+    if (isIOS && isSafari) {
+      // AudioContextが正常に動作しているか再確認
+      if (audioContext.state === 'suspended') {
+        await audioContext.resume()
+      }
+      // 少し待機してから最終確認
+      await new Promise(resolve => setTimeout(resolve, 100))
+      
+      if (audioContext.state !== 'running') {
+        console.warn('AudioContext is not running after initialization on iOS Safari')
+        return false
+      }
+    }
+    
+    // 成功したら権限を記録
+    setAudioContextPermissionGranted()
     
     return true
   } catch (error) {

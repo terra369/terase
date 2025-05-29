@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { Button } from './button'
-import { Mic } from 'lucide-react'
+import { Mic, Volume2 } from 'lucide-react'
 
 interface AudioConsentOverlayProps {
   onConsent: () => void
@@ -50,11 +50,18 @@ export function AudioConsentOverlay({ onConsent }: AudioConsentOverlayProps) {
         </p>
       </div>
 
-      {/* Info text */}
+      {/* iOS specific info */}
       <div className="absolute bottom-8 left-0 right-0 text-center px-8">
         <p className="text-xs text-[#999] max-w-sm mx-auto">
-          ブラウザの制限により、音声再生には最初にユーザーの操作が必要です。
+          iOS Safariでは、音声再生にはユーザーの明示的な許可が必要です。
         </p>
+        {/* iOSの場合の追加情報 */}
+        {/iPad|iPhone|iPod/.test(navigator.userAgent) && (
+          <div className="mt-4 flex items-center justify-center gap-2 text-[#666]">
+            <Volume2 className="w-4 h-4" />
+            <span className="text-xs">デバイスのサイレントモードをオフにしてください</span>
+          </div>
+        )}
       </div>
     </div>
   )
