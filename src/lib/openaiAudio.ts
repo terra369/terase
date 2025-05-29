@@ -54,8 +54,22 @@ export async function streamTTS(text: string, onProgress?: (progress: number) =>
       }
     };
     
-    // 再生開始
-    await audio.play();
+    // 再生開始（モバイル対応）
+    try {
+      await audio.play();
+    } catch (error) {
+      if (error instanceof Error && error.name === 'NotAllowedError') {
+        console.warn('Audio autoplay blocked by browser policy. Requesting user interaction...');
+        // AutoplayManagerにオーディオ再生要求を送信
+        const event = new CustomEvent('audioPlayRequest', { detail: audio });
+        window.dispatchEvent(event);
+        
+        // 発話状態は維持（ユーザーがタップするまで待機）
+        setSpeaking(true);
+      } else {
+        throw error;
+      }
+    }
     
     // コントロール用のオブジェクトを返す
     return {

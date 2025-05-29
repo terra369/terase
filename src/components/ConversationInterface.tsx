@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { Canvas } from '@react-three/fiber';
 import Link from 'next/link';
 import { BallBot } from '@/components/BallBot';
+import { AutoplayManager } from '@/components/AutoplayManager';
 import { useRecorder } from '@/components/hooks/useRecorder';
 import { useConversation } from '@/components/hooks/useConversation';
 import { useTodayDiary } from '@/components/hooks/useTodayDiary';
@@ -79,7 +80,8 @@ export default function ConversationInterface() {
   const isProcessing = ['transcribing', 'thinking'].includes(state);
 
   return (
-    <div className="relative h-screen overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
+    <AutoplayManager>
+      <div className="relative h-screen overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
       {/* 3D ボット表示 */}
       <div className="absolute inset-0">
         <Canvas
@@ -189,6 +191,7 @@ export default function ConversationInterface() {
         </div>
       </div>
 
-    </div>
+      </div>
+    </AutoplayManager>
   );
 }

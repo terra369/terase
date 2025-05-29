@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Calendar, Mic } from "lucide-react";
 import Link from 'next/link';
 import { BallBot } from '@/components/BallBot';
+import { AutoplayManager } from '@/components/AutoplayManager';
 import { useRecorder } from '@/components/hooks/useRecorder';
 import { useConversation } from '@/components/hooks/useConversation';
 import { useTodayDiary } from '@/components/hooks/useTodayDiary';
@@ -65,7 +66,8 @@ export default function MobileConversationInterface() {
 
 
   return (
-    <main className="bg-[#ecedf3] flex flex-row justify-center w-full min-h-screen">
+    <AutoplayManager>
+      <main className="bg-[#ecedf3] flex flex-row justify-center w-full min-h-screen">
       <div className="bg-[#ecedf3] w-full max-w-[390px] md:max-w-2xl lg:max-w-4xl min-h-screen relative mx-auto">
         {/* App header */}
         <header className="absolute top-[53px] md:top-20 left-0 right-0 flex justify-between items-center px-9 md:px-12">
@@ -158,6 +160,7 @@ export default function MobileConversationInterface() {
           </div>
         )}
       </div>
-    </main>
+      </main>
+    </AutoplayManager>
   );
 }
