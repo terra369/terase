@@ -1,16 +1,12 @@
 'use client';
 
-import { useState, useCallback, useEffect, useRef } from 'react';
-import { supabaseBrowser } from '@/lib/supabase/browser';
+import { useState, useCallback } from 'react';
 import { useDiaryRealtime } from '@/lib/useDiaryRealtime';
-import { useAudioReactive } from '@/components/hooks/useAudioReactive';
 
 type Msg = {
     id: number;
     role: 'user' | 'ai';
     text: string;
-    audio_url: string | null;
-    signed?: string | null;
     created_at: string;
 };
 
@@ -69,37 +65,33 @@ const ChatInput = ({ onSend }: { onSend: (text: string) => Promise<void> }) => {
     );
 };
 
-// 音声再生コンポーネント（BallBotと連動する）
-const AudioPlayerWithReactive = ({ src }: { src: string }) => {
-    const audioRef = useRef<HTMLAudioElement>(null);
-    const { setupExistingAudio } = useAudioReactive();
-    
-    useEffect(() => {
-        if (audioRef.current) {
-            // 音声要素をセットアップ
-            setupExistingAudio(audioRef.current);
-        }
-    }, [setupExistingAudio]);
-    
-    return <audio ref={audioRef} controls src={src} className="w-full mt-1" />;
+// Format timestamp for display
+const formatTimestamp = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleTimeString('ja-JP', { 
+        hour: '2-digit', 
+        minute: '2-digit' 
+    });
 };
 
 export default function DiaryDetailClient(
     { diaryId, initialMsgs }: { diaryId: number; initialMsgs: Msg[] },
 ) {
-    const [messages, setMessages] = useState<Msg[]>(initialMsgs);
-    const { speak } = useAudioReactive();
+    // Sort messages by creation time (oldest first)
+    const sortedInitialMsgs = [...initialMsgs].sort((a, b) => 
+        new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+    );
+    const [messages, setMessages] = useState<Msg[]>(sortedInitialMsgs);
 
-    /* 署名 URL を付与して state 追加 */
-    const handleInsert = useCallback(async (m: Msg) => {
-        if (m.audio_url) {
-            const { data } = await supabaseBrowser
-                .storage
-                .from('diary-audio')
-                .createSignedUrl(m.audio_url, 600);
-            m.signed = data?.signedUrl ?? null;
-        }
-        setMessages((prev) => [...prev, m]);
+    /* メッセージ追加時の処理（時系列順を維持） */
+    const handleInsert = useCallback((m: Msg) => {
+        setMessages((prev) => {
+            const newMessages = [...prev, m];
+            // Sort by creation time to maintain chronological order
+            return newMessages.sort((a, b) => 
+                new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+            );
+        });
     }, []);
 
     /* 送信処理 */
@@ -109,24 +101,23 @@ export default function DiaryDetailClient(
             id: Date.now(),
             role: 'user',
             text,
-            audio_url: null,
             created_at: new Date().toISOString()
         };
-        setMessages(prev => [...prev, tempUserMsg]);
+        setMessages(prev => {
+            const newMessages = [...prev, tempUserMsg];
+            return newMessages.sort((a, b) => 
+                new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+            );
+        });
 
         // Send to AI function
-        const { data } = await fetch("/api/functions/v1/ai_reply", {
+        await fetch("/api/functions/v1/ai_reply", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ text, diaryId })
-        }).then(res => res.json());
+        });
 
-        // Speak the reply
-        if (data?.replyText) {
-            await speak(data.replyText);
-        }
-
-        // Subscribe to deep broadcast channel
+        // Subscribe to deep broadcast channel for text updates only
         supabaseBrowser
             .channel(`diary_${diaryId}`)
             .on("broadcast", { event: "deep" }, payload => {
@@ -138,8 +129,6 @@ export default function DiaryDetailClient(
                 hudToast.className = 'bg-blue-900/80 text-blue-100 p-3 rounded-lg fixed top-4 right-4 z-50';
                 hudContainer.appendChild(hudToast);
                 setTimeout(() => hudContainer.remove(), 5000);
-
-                if (payload.text) speak(payload.text);
             })
             .subscribe();
     };
@@ -148,19 +137,28 @@ export default function DiaryDetailClient(
 
     return (
         <div className="space-y-4 relative">
-            {/* Chat messages */}
-            <div className="space-y-4 max-h-[50vh] overflow-y-auto p-2">
+            {/* Chat messages with timestamps */}
+            <div className="space-y-3 max-h-[50vh] overflow-y-auto p-2">
                 {messages.map((m) => (
                     <div
                         key={m.id}
-                        className={`p-3 rounded-lg ${m.role === 'ai'
+                        className={`p-4 rounded-lg ${m.role === 'ai'
                             ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-800 dark:text-blue-200 ml-4'
                             : 'bg-gray-50 dark:bg-gray-800/30 mr-4'}`}
                     >
-                        <p className="whitespace-pre-wrap">{m.text}</p>
-                        {m.signed && (
-                            <AudioPlayerWithReactive src={m.signed} />
-                        )}
+                        <div className="flex items-center justify-between mb-2">
+                            <span className={`text-xs font-medium ${m.role === 'ai' 
+                                ? 'text-blue-600 dark:text-blue-400' 
+                                : 'text-gray-600 dark:text-gray-400'}`}>
+                                {m.role === 'ai' ? 'AI' : 'あなた'}
+                            </span>
+                            <span className="text-xs text-gray-500 dark:text-gray-400">
+                                {formatTimestamp(m.created_at)}
+                            </span>
+                        </div>
+                        <p className="whitespace-pre-wrap leading-relaxed text-base">
+                            {m.text}
+                        </p>
                     </div>
                 ))}
             </div>

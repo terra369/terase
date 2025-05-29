@@ -17,7 +17,6 @@ export async function GET(req: NextRequest) {
       id,
       role,
       text,
-      audio_url,
       created_at,
       diaries!inner(date, user_id)
     `)
@@ -33,16 +32,16 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const { diaryId, role, text, audioUrl, triggerAI = false } = await req.json();
+  const { diaryId, role, text, triggerAI = false } = await req.json();
 
   const supabase = await supabaseServer();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: 'unauth' }, { status: 401 });
 
-  // Insert the message
+  // Insert the message (audio_url is set to null since audio is no longer used)
   const { data: messageData, error } = await supabase
     .from('diary_messages')
-    .insert({ diary_id: diaryId, role, text, audio_url: audioUrl })
+    .insert({ diary_id: diaryId, role, text, audio_url: null })
     .select()
     .single();
 

@@ -1,20 +1,17 @@
 'use client'
 
-import { useState, useCallback, useEffect, useRef, Suspense } from 'react'
+import { useState, useCallback, useEffect, Suspense } from 'react'
 import { Card, CardContent } from "@/components/ui/card"
-import { ChevronDown, ChevronUp, X, Play } from "lucide-react"
+import { ChevronDown, ChevronUp, X } from "lucide-react"
 import { Canvas } from '@react-three/fiber'
 import { BallBot } from '@/components/BallBot'
-import { useAudioReactive } from '@/components/hooks/useAudioReactive'
 import { supabaseBrowser } from '@/lib/supabase/browser'
 
 interface DiaryMessage {
   id: number
   role: 'user' | 'ai'
   text: string
-  audio_url?: string
   created_at: string
-  signed?: string | null
 }
 
 interface ExpandableDiaryViewProps {
@@ -65,18 +62,13 @@ const ChatInput = ({ onSend }: { onSend: (text: string) => Promise<void> }) => {
   )
 }
 
-// Audio player component with reactive visualization
-const AudioPlayerWithReactive = ({ src }: { src: string }) => {
-  const audioRef = useRef<HTMLAudioElement>(null)
-  const { setupExistingAudio } = useAudioReactive()
-  
-  useEffect(() => {
-    if (audioRef.current) {
-      setupExistingAudio(audioRef.current)
-    }
-  }, [setupExistingAudio])
-  
-  return <audio ref={audioRef} controls src={src} className="w-full mt-1" />
+// Format timestamp for display
+const formatTimestamp = (dateString: string) => {
+  const date = new Date(dateString);
+  return date.toLocaleTimeString('ja-JP', { 
+    hour: '2-digit', 
+    minute: '2-digit' 
+  });
 }
 
 export default function ExpandableDiaryView({ 
@@ -85,39 +77,30 @@ export default function ExpandableDiaryView({
   initialMessages
 }: ExpandableDiaryViewProps) {
   const [isExpanded, setIsExpanded] = useState(false)
-  const [messages, setMessages] = useState<DiaryMessage[]>(initialMessages)
-  const { speak } = useAudioReactive()
+  
+  // Sort messages by creation time (oldest first)
+  const sortedMessages = [...initialMessages].sort((a, b) => 
+    new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+  )
+  const [messages, setMessages] = useState<DiaryMessage[]>(sortedMessages)
 
-  // Update messages when initialMessages changes and sign audio URLs
+  // Update messages when initialMessages changes
   useEffect(() => {
-    const signAudioUrls = async () => {
-      const signedMessages = await Promise.all(
-        initialMessages.map(async (msg) => {
-          if (msg.audio_url) {
-            const { data } = await supabaseBrowser
-              .storage
-              .from('diary-audio')
-              .createSignedUrl(msg.audio_url, 600)
-            return { ...msg, signed: data?.signedUrl ?? null }
-          }
-          return msg
-        })
-      )
-      setMessages(signedMessages)
-    }
-    signAudioUrls()
+    const sorted = [...initialMessages].sort((a, b) => 
+      new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+    )
+    setMessages(sorted)
   }, [initialMessages])
 
   // Handle realtime updates
-  const handleInsert = useCallback(async (m: DiaryMessage) => {
-    if (m.audio_url) {
-      const { data } = await supabaseBrowser
-        .storage
-        .from('diary-audio')
-        .createSignedUrl(m.audio_url, 600)
-      m.signed = data?.signedUrl ?? null
-    }
-    setMessages((prev) => [...prev, m])
+  const handleInsert = useCallback((m: DiaryMessage) => {
+    setMessages((prev) => {
+      const newMessages = [...prev, m]
+      // Sort by creation time to maintain chronological order
+      return newMessages.sort((a, b) => 
+        new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+      )
+    })
   }, [])
 
   // Handle sending new messages
@@ -129,24 +112,23 @@ export default function ExpandableDiaryView({
       id: Date.now(),
       role: 'user',
       text,
-      audio_url: undefined,
       created_at: new Date().toISOString()
     }
-    setMessages(prev => [...prev, tempUserMsg])
+    setMessages(prev => {
+      const newMessages = [...prev, tempUserMsg]
+      return newMessages.sort((a, b) => 
+        new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+      )
+    })
 
     // Send to AI function
-    const { data } = await fetch("/api/functions/v1/ai_reply", {
+    await fetch("/api/functions/v1/ai_reply", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ text, diaryId })
-    }).then(res => res.json())
+    })
 
-    // Speak the reply
-    if (data?.replyText) {
-      await speak(data.replyText)
-    }
-
-    // Subscribe to deep broadcast channel
+    // Subscribe to deep broadcast channel for text updates only
     supabaseBrowser
       .channel(`diary_${diaryId}`)
       .on("broadcast", { event: "deep" }, payload => {
@@ -158,8 +140,6 @@ export default function ExpandableDiaryView({
         hudToast.className = 'bg-blue-900/80 text-blue-100 p-3 rounded-lg fixed top-4 right-4 z-50'
         hudContainer.appendChild(hudToast)
         setTimeout(() => hudContainer.remove(), 5000)
-
-        if (payload.text) speak(payload.text)
       })
       .subscribe()
   }
@@ -192,15 +172,6 @@ export default function ExpandableDiaryView({
   if (!messages.length) return null
 
   const firstMessage = messages[0]
-  const hasAudio = Boolean(firstMessage?.signed)
-
-  const handlePlayAudio = (e: React.MouseEvent) => {
-    e.stopPropagation()
-    if (firstMessage?.signed) {
-      const audio = new Audio(firstMessage.signed)
-      audio.play()
-    }
-  }
 
   return (
     <div className="w-full">
@@ -208,23 +179,18 @@ export default function ExpandableDiaryView({
       <Card className="w-full shadow-[0px_12px_20px_#0000000d] rounded-[17px] border-0 mb-3">
         <CardContent className="p-4">
           <div className="flex items-start justify-between">
-            <div className="flex items-start gap-3 flex-1">
-              {hasAudio && (
-                <button
-                  onClick={handlePlayAudio}
-                  className="flex-shrink-0 w-10 h-10 bg-[#ec6a52]/10 rounded-full flex items-center justify-center hover:bg-[#ec6a52]/20 transition-colors"
-                >
-                  <Play size={16} className="text-[#ec6a52] fill-[#ec6a52]" />
-                </button>
-              )}
-              <div className="flex-1">
-                <h3 className="font-semibold text-[17px] text-[#212121] mb-1">
+            <div className="flex-1">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="font-semibold text-[17px] text-[#212121]">
                   {selectedDate} の日記
                 </h3>
-                <p className="text-[13px] text-[#212121] line-clamp-2">
-                  {messages[0]?.text || 'No content'}
-                </p>
+                <span className="text-xs text-gray-500">
+                  {formatTimestamp(firstMessage.created_at)}
+                </span>
               </div>
+              <p className="text-[14px] text-[#212121] line-clamp-2 leading-relaxed">
+                {firstMessage?.text || 'No content'}
+              </p>
             </div>
             <button
               onClick={() => setIsExpanded(!isExpanded)}
@@ -267,19 +233,28 @@ export default function ExpandableDiaryView({
               </Canvas>
             </div>
 
-            {/* Chat messages */}
+            {/* Chat messages with timestamps */}
             <div className="space-y-3 max-h-[40vh] overflow-y-auto">
               {messages.map((m) => (
                 <div
                   key={m.id}
-                  className={`p-3 rounded-lg ${m.role === 'ai'
+                  className={`p-4 rounded-lg ${m.role === 'ai'
                     ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-800 dark:text-blue-200 ml-4'
                     : 'bg-gray-50 dark:bg-gray-800/30 mr-4'}`}
                 >
-                  <p className="whitespace-pre-wrap text-sm">{m.text}</p>
-                  {m.signed && (
-                    <AudioPlayerWithReactive src={m.signed} />
-                  )}
+                  <div className="flex items-center justify-between mb-2">
+                    <span className={`text-xs font-medium ${m.role === 'ai' 
+                      ? 'text-blue-600 dark:text-blue-400' 
+                      : 'text-gray-600 dark:text-gray-400'}`}>
+                      {m.role === 'ai' ? 'AI' : 'あなた'}
+                    </span>
+                    <span className="text-xs text-gray-500 dark:text-gray-400">
+                      {formatTimestamp(m.created_at)}
+                    </span>
+                  </div>
+                  <p className="whitespace-pre-wrap leading-relaxed text-sm">
+                    {m.text}
+                  </p>
                 </div>
               ))}
             </div>
