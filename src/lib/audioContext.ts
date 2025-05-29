@@ -1,5 +1,7 @@
 'use client'
 
+import { logAudioDebug } from './audioDebug'
+
 const AUDIO_CONTEXT_PERMISSION_KEY = 'terase_audio_context_permission_granted'
 
 // グローバルなAudioContextインスタンス
@@ -22,8 +24,17 @@ export async function initializeAudioContext(): Promise<AudioContext | null> {
   try {
     // 既存のAudioContextがあり、正常に動作している場合はそれを返す
     if (globalAudioContext && globalAudioContext.state !== 'closed') {
+      logAudioDebug({
+        audioContextState: globalAudioContext.state,
+        error: 'Using existing AudioContext'
+      })
+      
       if (globalAudioContext.state === 'suspended') {
         await globalAudioContext.resume()
+        logAudioDebug({
+          audioContextState: globalAudioContext.state,
+          error: 'Resumed existing AudioContext'
+        })
       }
       return globalAudioContext
     }
@@ -32,14 +43,26 @@ export async function initializeAudioContext(): Promise<AudioContext | null> {
     const AudioContextClass = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext
     globalAudioContext = new AudioContextClass()
     
+    logAudioDebug({
+      audioContextState: globalAudioContext.state,
+      error: 'Created new AudioContext'
+    })
+    
     // suspendedの場合はresumeを試行
     if (globalAudioContext.state === 'suspended') {
       await globalAudioContext.resume()
+      logAudioDebug({
+        audioContextState: globalAudioContext.state,
+        error: 'Resumed new AudioContext'
+      })
     }
     
     return globalAudioContext
   } catch (error) {
     console.error('Failed to initialize AudioContext:', error)
+    logAudioDebug({
+      error: `Failed to initialize AudioContext: ${error}`
+    })
     return null
   }
 }
@@ -103,6 +126,26 @@ export async function handleFirstUserInteraction(): Promise<boolean> {
     oscillator.frequency.setValueAtTime(440, audioContext.currentTime)
     oscillator.start(audioContext.currentTime)
     oscillator.stop(audioContext.currentTime + duration)
+    
+    // iOSの場合、ダミーのAudio要素も再生してより確実にする
+    if (isIOS) {
+      const silentAudio = new Audio()
+      silentAudio.src = 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQQAAAAAAAA='
+      silentAudio.setAttribute('playsinline', 'true')
+      silentAudio.setAttribute('webkit-playsinline', 'true')
+      silentAudio.volume = 0.01
+      try {
+        await silentAudio.play()
+        logAudioDebug({
+          error: 'Silent audio played successfully on iOS'
+        })
+      } catch (e) {
+        console.warn('Silent audio play failed:', e)
+        logAudioDebug({
+          error: `Silent audio play failed on iOS: ${e}`
+        })
+      }
+    }
     
     // iOS Safariでは長めに待機
     const waitTime = isIOS && isSafari ? 200 : 50

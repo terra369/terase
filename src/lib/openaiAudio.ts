@@ -5,6 +5,12 @@
 
 import { useAudioStore } from '@/stores/useAudioStore';
 import { ensureAudioContextRunning } from '@/lib/audioContext';
+import { 
+  isIOS, 
+  createIOSAudioElement,
+  playAudioWithIOSFallback,
+  preloadAudioForIOS 
+} from '@/lib/audioUtils';
 
 export async function streamTTS(text: string, onProgress?: (progress: number) => void) {
   try {
@@ -27,12 +33,15 @@ export async function streamTTS(text: string, onProgress?: (progress: number) =>
     const blob = new Blob([arrayBuffer], { type: 'audio/mpeg' });
     
     // Audio要素を作成して再生
-    const audio = new Audio();
-    audio.src = URL.createObjectURL(blob);
+    const audio = isIOS() 
+      ? createIOSAudioElement(URL.createObjectURL(blob))
+      : new Audio(URL.createObjectURL(blob));
     
-    // iOS特有の属性を設定
-    audio.setAttribute('playsinline', 'true');
-    audio.setAttribute('webkit-playsinline', 'true');
+    // iOS以外でも念のため属性を設定
+    if (!isIOS()) {
+      audio.setAttribute('playsinline', 'true');
+      audio.setAttribute('webkit-playsinline', 'true');
+    }
     
     // 発話状態を更新
     const { setSpeaking } = useAudioStore.getState();
@@ -64,25 +73,31 @@ export async function streamTTS(text: string, onProgress?: (progress: number) =>
       // AudioContextが正常に動作しているか確認
       await ensureAudioContextRunning();
       
-      // iOSの場合、明示的にloadを呼び出してcanplaythroughイベントを待つ
-      audio.load();
-      await new Promise((resolve, reject) => {
-        const timeout = setTimeout(() => {
-          reject(new Error('Audio load timeout'));
-        }, 5000);
+      if (isIOS()) {
+        // iOS専用の再生処理
+        await preloadAudioForIOS(audio);
+        await playAudioWithIOSFallback(audio);
+      } else {
+        // iOS以外の通常処理
+        audio.load();
+        await new Promise((resolve, reject) => {
+          const timeout = setTimeout(() => {
+            reject(new Error('Audio load timeout'));
+          }, 5000);
+          
+          audio.addEventListener('canplaythrough', () => {
+            clearTimeout(timeout);
+            resolve(undefined);
+          }, { once: true });
+          
+          audio.addEventListener('error', (e) => {
+            clearTimeout(timeout);
+            reject(e);
+          }, { once: true });
+        });
         
-        audio.addEventListener('canplaythrough', () => {
-          clearTimeout(timeout);
-          resolve(undefined);
-        }, { once: true });
-        
-        audio.addEventListener('error', (e) => {
-          clearTimeout(timeout);
-          reject(e);
-        }, { once: true });
-      });
-      
-      await audio.play();
+        await audio.play();
+      }
     } catch (error) {
       console.error('Direct audio play failed, trying via AutoplayManager:', error);
       // AutoplayManagerにオーディオ再生要求を送信（モバイル必須）
