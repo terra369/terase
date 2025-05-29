@@ -98,9 +98,8 @@ export const ThinFilmMaterial = shaderMaterial(
     // Thinking: bright cyber blue (cyan)
     vec3 thinkingColor = hsl2rgb(vec3(0.5, 0.9, 0.75));
     
-    // Speaking: bright gold-orange
-    float speakingHue = fract(uTime * 0.1 + length(vPos.xy) * 0.2);
-    vec3 speakingColor = hsl2rgb(vec3(0.08 + speakingHue * 0.1, 0.85, 0.7));
+    // Speaking: fixed bright gold-orange (no color changes)
+    vec3 speakingColor = hsl2rgb(vec3(0.08, 0.85, 0.7));
     
     // Normal rainbow (bright)
     vec3 rainbow = hsl2rgb(vec3(baseHue, 0.8, 0.7));
