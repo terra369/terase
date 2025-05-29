@@ -194,7 +194,11 @@ export function useConversation(diaryId?: number) {
     } catch (error) {
       console.error('TTS error:', error);
       const errorMessage = error instanceof Error ? error.message : '音声の再生に失敗しました';
-      setError(`音声再生エラー: ${errorMessage}`);
+      
+      // 自動再生がブロックされた場合はエラーとして表示しない
+      if (!(error instanceof Error && error.message.includes('自動再生がブロックされました'))) {
+        setError(`音声再生エラー: ${errorMessage}`);
+      }
     } finally {
       setState('idle');
       setSpeaking(false);
