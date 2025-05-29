@@ -44,30 +44,136 @@
 
 ```
 terase/
+├── public/                    # Static assets
+│   ├── file.svg
+│   ├── globe.svg
+│   ├── next.svg
+│   ├── vercel.svg
+│   └── window.svg
 ├── src/
-│   ├── app/                    # Next.js App Router
+│   ├── app/                   # Next.js App Router
 │   │   ├── actions/           # Server Actions
+│   │   │   └── saveDiary.ts
 │   │   ├── api/               # API Routes
+│   │   │   ├── actions/
+│   │   │   │   └── saveDiary/
+│   │   │   │       └── route.ts
+│   │   │   ├── ai-chat/
+│   │   │   │   └── route.ts
+│   │   │   ├── diaries/
+│   │   │   │   ├── route.ts
+│   │   │   │   ├── messages/
+│   │   │   │   │   └── route.ts
+│   │   │   │   └── [date]/
+│   │   │   │       └── route.ts
+│   │   │   ├── transcribe/
+│   │   │   │   └── route.ts
+│   │   │   └── tts/
+│   │   │       └── route.ts
 │   │   ├── auth/              # Authentication pages
+│   │   │   └── callback/
+│   │   │       └── page.tsx
 │   │   ├── calendar/          # Calendar interface
+│   │   │   ├── CalendarClient.tsx
+│   │   │   └── page.tsx
+│   │   ├── components/        # Page-specific components
+│   │   │   ├── Calendar.tsx
+│   │   │   ├── DiaryHeatmap.tsx
+│   │   │   ├── ExpandableDiaryView.tsx
+│   │   │   ├── ItemListSection.tsx
+│   │   │   └── ui/
+│   │   │       └── mobile-login-card.tsx
 │   │   ├── diary/             # Diary management
-│   │   └── components/        # Page-specific components
+│   │   │   ├── [date]/
+│   │   │   │   ├── DiaryDetailClient.tsx
+│   │   │   │   └── page.tsx
+│   │   │   └── new/
+│   │   │       └── page.tsx
+│   │   ├── login/
+│   │   │   └── page.tsx
+│   │   ├── favicon.ico
+│   │   ├── globals.css
+│   │   ├── layout.tsx
+│   │   └── page.tsx
 │   ├── components/            # Shared React components
-│   │   ├── BallBot.tsx        # 3D rainbow JARVIS sphere
-│   │   ├── ConversationInterface.tsx  # Main voice UI
+│   │   ├── BallBot.tsx        # 3D rainbow JARVIS sphere (main export)
+│   │   ├── BallBot/           # Modular BallBot implementation
+│   │   │   ├── constants.ts   # Visual constants and configuration
+│   │   │   ├── index.tsx      # Main BallBot component
+│   │   │   ├── types.ts       # TypeScript type definitions
+│   │   │   ├── hooks/         # Custom animation hooks
+│   │   │   │   └── useBallBotAnimation.ts
+│   │   │   └── shaders/       # WebGL shader materials
+│   │   │       └── ThinFilmMaterial.ts
+│   │   ├── ConversationInterface.tsx    # Main voice UI
+│   │   ├── MobileConversationInterface.tsx  # Mobile-optimized UI
+│   │   ├── VoiceRecorder.tsx  # Audio recording component
 │   │   ├── hooks/             # Custom React hooks
+│   │   │   ├── useAudioReactive.ts
+│   │   │   ├── useConversation.ts
+│   │   │   ├── useRecorder.ts
+│   │   │   └── useTodayDiary.ts
 │   │   └── ui/                # UI components
+│   │       ├── button.tsx
+│   │       └── card.tsx
 │   ├── lib/                   # Utility libraries
-│   │   ├── supabase/          # Supabase client config
 │   │   ├── openaiAudio.ts     # OpenAI integration
-│   │   └── whisper.ts         # Speech processing
+│   │   ├── storage.ts         # Storage utilities
+│   │   ├── uploadAudio.ts     # Audio upload handling
+│   │   ├── useDiaryRealtime.ts # Real-time diary updates
+│   │   ├── utils.ts           # General utilities
+│   │   ├── whisper.ts         # Speech processing
+│   │   └── supabase/          # Supabase client config
+│   │       ├── browser.ts
+│   │       ├── middleware.ts
+│   │       └── server.ts
 │   ├── stores/                # Zustand state stores
+│   │   ├── useAudioStore.ts
+│   │   └── useConversationStore.ts
 │   ├── test/                  # Test files
-│   └── types/                 # TypeScript definitions
+│   │   ├── diary-messages.test.ts
+│   │   └── setup.ts
+│   ├── types/                 # TypeScript definitions
+│   │   └── react-calendar-heatmap.d.ts
+│   └── middleware.ts
 ├── supabase/
-│   ├── migrations/            # Database schema versions
-│   └── functions/             # Edge Functions
-└── public/                    # Static assets
+│   ├── config.toml
+│   ├── functions/             # Edge Functions
+│   │   └── ai_reply/
+│   │       ├── deep.ts
+│   │       └── index.ts
+│   └── migrations/            # Database schema versions
+│       ├── 20250419123453_init_schema.sql
+│       ├── 20250420064540_add_mood_emoji.sql
+│       ├── 20250420090606_enable_rls_diaries.sql
+│       ├── 20250427033303_make_profile_nullable_and_trigger.sql
+│       ├── 20250428073505_create_diary_month_summary.sql
+│       ├── 20250428080756_fix_diary_month_summary.sql
+│       ├── 20250428132240_create_private_audio_bucket.sql
+│       ├── 20250428133625_storage_rls.sql
+│       ├── 20250428145356_fix_storage_policies.sql
+│       ├── 20250428151328_storage_bucket_privs_and_policies.sql
+│       ├── 20250429024713_split_storage_policies.sql
+│       ├── 20250429034123_fix_private_audio_bucket.sql
+│       ├── 20250429041048_allow_null_ai_reply.sql
+│       ├── 20250429120901_fix_profiles_and_fk.sql
+│       ├── 20250429130407_dialog_diary.sql
+│       ├── 20250429171945_friend_same_day.sql
+│       ├── 20250429173010_fix_same_day_policies.sql
+│       ├── 20250429174214_set_storage_owner.sql
+│       ├── 20250524141500_trigger_ai_reply.sql
+│       └── 20250527051914_drop_trigger_ai_reply.sql
+├── CLAUDE.md
+├── README.md
+├── claude.yml
+├── components.json
+├── eslint.config.mjs
+├── next.config.ts
+├── package-lock.json
+├── package.json
+├── postcss.config.mjs
+├── tsconfig.json
+└── vitest.config.ts
 ```
 
 ## 💾 Database Schema
@@ -450,8 +556,8 @@ Follow Conventional Commits:
 
 ---
 
-**Last Updated**: 2025-05-25
-**Version**: 1.0.0
+**Last Updated**: 2025-05-29
+**Version**: 1.0.1
 **Maintainer**: terra369 <terra369@users.noreply.github.com>
 
 This documentation follows the TDD (Test-Driven Documentation) approach requested in Issue #23, providing comprehensive coverage of the terase project structure, conventions, and development workflow.
