@@ -30,6 +30,10 @@ export async function streamTTS(text: string, onProgress?: (progress: number) =>
     const audio = new Audio();
     audio.src = URL.createObjectURL(blob);
     
+    // iOS特有の属性を設定
+    audio.setAttribute('playsinline', 'true');
+    audio.setAttribute('webkit-playsinline', 'true');
+    
     // 発話状態を更新
     const { setSpeaking } = useAudioStore.getState();
     setSpeaking(true);
@@ -59,6 +63,25 @@ export async function streamTTS(text: string, onProgress?: (progress: number) =>
     try {
       // AudioContextが正常に動作しているか確認
       await ensureAudioContextRunning();
+      
+      // iOSの場合、明示的にloadを呼び出してcanplaythroughイベントを待つ
+      audio.load();
+      await new Promise((resolve, reject) => {
+        const timeout = setTimeout(() => {
+          reject(new Error('Audio load timeout'));
+        }, 5000);
+        
+        audio.addEventListener('canplaythrough', () => {
+          clearTimeout(timeout);
+          resolve(undefined);
+        }, { once: true });
+        
+        audio.addEventListener('error', (e) => {
+          clearTimeout(timeout);
+          reject(e);
+        }, { once: true });
+      });
+      
       await audio.play();
     } catch (error) {
       console.error('Direct audio play failed, trying via AutoplayManager:', error);

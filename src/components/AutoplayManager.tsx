@@ -48,11 +48,29 @@ export function AutoplayManager({ children }: AutoplayManagerProps) {
       // AudioContextが正常に動作しているか確認
       await ensureAudioContextRunning();
       
-      // モバイルでは load() を呼んでからplayを試行
-      if (!audio.readyState) {
+      // iOS特有の属性を設定（もし設定されていなければ）
+      if (!audio.hasAttribute('playsinline')) {
+        audio.setAttribute('playsinline', 'true');
+        audio.setAttribute('webkit-playsinline', 'true');
+      }
+      
+      // readyStateが0（HAVE_NOTHING）の場合、または音声データが完全に読み込まれていない場合
+      if (audio.readyState < 4) {
         audio.load();
-        await new Promise((resolve) => {
-          audio.addEventListener('canplay', resolve, { once: true });
+        await new Promise((resolve, reject) => {
+          const timeout = setTimeout(() => {
+            reject(new Error('Audio load timeout in AutoplayManager'));
+          }, 5000);
+          
+          audio.addEventListener('canplaythrough', () => {
+            clearTimeout(timeout);
+            resolve(undefined);
+          }, { once: true });
+          
+          audio.addEventListener('error', (e) => {
+            clearTimeout(timeout);
+            reject(e);
+          }, { once: true });
         });
       }
       
@@ -60,9 +78,13 @@ export function AutoplayManager({ children }: AutoplayManagerProps) {
       return true;
     } catch (error) {
       console.error('Audio play failed in AutoplayManager:', error);
-      // モバイルでは再試行
+      // iOSでは少し長めに待ってから再試行
       try {
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await new Promise(resolve => setTimeout(resolve, 300));
+        
+        // AudioContextを再度確認
+        await ensureAudioContextRunning();
+        
         await audio.play();
         return true;
       } catch (retryError) {

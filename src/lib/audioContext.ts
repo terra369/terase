@@ -49,8 +49,21 @@ export async function ensureAudioContextRunning(): Promise<boolean> {
     const audioContext = await initializeAudioContext()
     if (!audioContext) return false
     
+    // iOSの場合、より積極的にresumeを試みる
     if (audioContext.state === 'suspended') {
       await audioContext.resume()
+      
+      // iOS Safariの検出
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as unknown as { MSStream?: unknown }).MSStream
+      if (isIOS) {
+        // iOSの場合は少し待機してから再度確認
+        await new Promise(resolve => setTimeout(resolve, 100))
+        
+        // まだsuspendedの場合は再度resume
+        if (audioContext.state === 'suspended') {
+          await audioContext.resume()
+        }
+      }
     }
     
     return audioContext.state === 'running'
