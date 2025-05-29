@@ -166,7 +166,7 @@ export function useBallBotAnimation() {
     // Handle speaking duration tracking
     if (targetSpeaking > 0 && lastAIMessage && lastAIMessage.id !== lastAIMessageId.current) {
       const messageLength = lastAIMessage.content?.length || 0;
-      currentSpeakingDuration.current = Math.max(7, messageLength * 0.6);
+      currentSpeakingDuration.current = Math.max(4, messageLength * 0.6);
       
       lastAIMessageId.current = lastAIMessage.id;
       speakingStartFrame.current = 0;
