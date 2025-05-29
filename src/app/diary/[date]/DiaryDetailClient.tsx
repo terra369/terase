@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import { useDiaryRealtime } from '@/lib/useDiaryRealtime';
+import { supabaseBrowser } from '@/lib/supabase/browser';
 
 type Msg = {
     id: number;
