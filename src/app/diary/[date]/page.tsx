@@ -31,8 +31,8 @@ export default async function DiaryDetail(
     msgs.sort((a, b) => +new Date(a.created_at) - +new Date(b.created_at));
 
     return (
-        <main className="max-w-xl mx-auto p-6">
-            <h1 className="text-xl font-bold mb-4">
+        <main className="max-w-[390px] md:max-w-xl lg:max-w-2xl mx-auto p-4 md:p-6">
+            <h1 className="text-lg md:text-xl lg:text-2xl font-bold mb-3 md:mb-4">
                 {format(new Date(date), 'yyyy年M月d日')}
             </h1>
             {/* Client Component に渡す */}

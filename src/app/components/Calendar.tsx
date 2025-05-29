@@ -71,36 +71,36 @@ export default function Calendar({ selectedDate, onDateSelect }: CalendarProps) 
   }
 
   return (
-    <div className="flex flex-col w-full items-center gap-6 bg-[#ecedf3] p-4">
+    <div className="flex flex-col w-full items-center gap-4 md:gap-6 bg-[#ecedf3] p-3 md:p-4">
       {/* Month navigation header */}
-      <div className="flex items-center justify-between px-3 py-0 w-full max-w-sm">
+      <div className="flex items-center justify-between px-3 py-0 w-full max-w-sm md:max-w-md lg:max-w-lg">
         <button 
           onClick={() => navigateMonth('prev')}
-          className="flex items-center justify-center w-6 h-6"
+          className="flex items-center justify-center w-8 h-8 md:w-10 md:h-10 touch-manipulation"
         >
-          <ChevronLeft className="w-6 h-6 text-gray-800" />
+          <ChevronLeft className="w-6 h-6 md:w-7 md:h-7 text-gray-800" />
         </button>
 
-        <h2 className="font-['Euclid_Circular_B-Medium'] font-medium text-[#212121] text-[21px]">
+        <h2 className="font-['Euclid_Circular_B-Medium'] font-medium text-[#212121] text-lg md:text-xl lg:text-2xl">
           {format(currentDate, 'yyyy/MM')}
         </h2>
 
         <button 
           onClick={() => navigateMonth('next')}
-          className="flex items-center justify-center w-6 h-6"
+          className="flex items-center justify-center w-8 h-8 md:w-10 md:h-10 touch-manipulation"
         >
-          <ChevronRight className="w-6 h-6 text-gray-800" />
+          <ChevronRight className="w-6 h-6 md:w-7 md:h-7 text-gray-800" />
         </button>
       </div>
 
       {/* Calendar grid */}
-      <div className="flex flex-col items-start gap-1 w-full max-w-sm">
+      <div className="flex flex-col items-start gap-1 w-full max-w-sm md:max-w-md lg:max-w-lg">
         {/* Days of week header */}
         <div className="flex items-center justify-between w-full">
           {daysOfWeek.map((day, index) => (
             <div
               key={`day-${index}`}
-              className="w-12 font-['Euclid_Circular_B-Medium'] font-medium text-[#212121] text-[13px] text-center"
+              className="w-12 md:w-14 lg:w-16 font-['Euclid_Circular_B-Medium'] font-medium text-[#212121] text-xs md:text-sm lg:text-base text-center"
             >
               {day}
             </div>
@@ -124,8 +124,8 @@ export default function Calendar({ selectedDate, onDateSelect }: CalendarProps) 
               // Handle days outside current month
               if (!isCurrentMonth) {
                 return (
-                  <div key={`empty-${weekIndex}-${dayIndex}`} className="w-[50px] h-12">
-                    <div className="w-12 h-12 font-normal text-transparent text-[13px] text-center">
+                  <div key={`empty-${weekIndex}-${dayIndex}`} className="w-12 md:w-14 lg:w-16 h-12 md:h-14 lg:h-16">
+                    <div className="w-12 md:w-14 lg:w-16 h-12 md:h-14 lg:h-16 font-normal text-transparent text-xs md:text-sm lg:text-base text-center">
                       0
                     </div>
                   </div>
@@ -135,17 +135,17 @@ export default function Calendar({ selectedDate, onDateSelect }: CalendarProps) 
               // Handle current day (today) - show with background like other days
               if (isToday && !isSelected) {
                 return (
-                  <div key={`day-${dayNumber}`} className="relative w-[50px] h-12">
+                  <div key={`day-${dayNumber}`} className="relative w-12 md:w-14 lg:w-16 h-12 md:h-14 lg:h-16">
                     <button
                       onClick={() => handleDateClick(date)}
-                      className="relative w-12 h-12 hover:opacity-80 transition-opacity"
+                      className="relative w-12 md:w-14 lg:w-16 h-12 md:h-14 lg:h-16 hover:opacity-80 transition-opacity touch-manipulation"
                     >
                       <div
-                        className={`absolute w-[30px] h-[30px] top-[9px] left-[9px] 
+                        className={`absolute w-7 h-7 md:w-8 md:h-8 lg:w-10 lg:h-10 top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2
                           ${hasDiary ? 'bg-[#ec6a52]' : 'bg-[#21212157]'} 
-                          rounded-[39px]`}
+                          rounded-full`}
                       />
-                      <div className="absolute top-0 left-0 font-['Euclid_Circular_B-Regular'] font-normal text-white text-[15px] w-12 h-12 text-center flex items-center justify-center">
+                      <div className="absolute top-0 left-0 font-['Euclid_Circular_B-Regular'] font-normal text-white text-sm md:text-base lg:text-lg w-full h-full text-center flex items-center justify-center">
                         {dayNumber}
                       </div>
                     </button>
@@ -155,17 +155,17 @@ export default function Calendar({ selectedDate, onDateSelect }: CalendarProps) 
 
               // Handle days with diary entries or selected state
               return (
-                <div key={`day-${dayNumber}`} className="relative w-[50px] h-12">
+                <div key={`day-${dayNumber}`} className="relative w-12 md:w-14 lg:w-16 h-12 md:h-14 lg:h-16">
                   <button
                     onClick={() => handleDateClick(date)}
-                    className="relative w-12 h-12 hover:opacity-80 transition-opacity"
+                    className="relative w-12 md:w-14 lg:w-16 h-12 md:h-14 lg:h-16 hover:opacity-80 transition-opacity touch-manipulation"
                   >
                     <div
-                      className={`absolute w-[30px] h-[30px] top-[9px] left-[9px] 
+                      className={`absolute w-7 h-7 md:w-8 md:h-8 lg:w-10 lg:h-10 top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2
                         ${hasDiary ? 'bg-[#ec6a52]' : 'bg-[#21212157]'} 
-                        ${isSelected ? 'rounded-[7px]' : 'rounded-[39px]'}`}
+                        ${isSelected ? 'rounded-lg' : 'rounded-full'}`}
                     />
-                    <div className="absolute top-0 left-0 font-['Euclid_Circular_B-Regular'] font-normal text-white text-[15px] w-12 h-12 text-center flex items-center justify-center">
+                    <div className="absolute top-0 left-0 font-['Euclid_Circular_B-Regular'] font-normal text-white text-sm md:text-base lg:text-lg w-full h-full text-center flex items-center justify-center">
                       {dayNumber}
                     </div>
                   </button>
