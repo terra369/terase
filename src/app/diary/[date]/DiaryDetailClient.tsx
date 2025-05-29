@@ -69,20 +69,6 @@ const ChatInput = ({ onSend }: { onSend: (text: string) => Promise<void> }) => {
     );
 };
 
-// 音声再生コンポーネント（BallBotと連動する）
-const AudioPlayerWithReactive = ({ src }: { src: string }) => {
-    const audioRef = useRef<HTMLAudioElement>(null);
-    const { setupExistingAudio } = useAudioReactive();
-    
-    useEffect(() => {
-        if (audioRef.current) {
-            // 音声要素をセットアップ
-            setupExistingAudio(audioRef.current);
-        }
-    }, [setupExistingAudio]);
-    
-    return <audio ref={audioRef} controls src={src} className="w-full mt-1" />;
-};
 
 export default function DiaryDetailClient(
     { diaryId, initialMsgs }: { diaryId: number; initialMsgs: Msg[] },
@@ -158,9 +144,6 @@ export default function DiaryDetailClient(
                             : 'bg-gray-50 dark:bg-gray-800/30 mr-4'}`}
                     >
                         <p className="whitespace-pre-wrap">{m.text}</p>
-                        {m.signed && (
-                            <AudioPlayerWithReactive src={m.signed} />
-                        )}
                     </div>
                 ))}
             </div>

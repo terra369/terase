@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect, useRef, Suspense } from 'react'
 import { Card, CardContent } from "@/components/ui/card"
-import { ChevronDown, ChevronUp, X, Play } from "lucide-react"
+import { ChevronDown, ChevronUp, X } from "lucide-react"
 import { Canvas } from '@react-three/fiber'
 import { BallBot } from '@/components/BallBot'
 import { useAudioReactive } from '@/components/hooks/useAudioReactive'
@@ -65,19 +65,6 @@ const ChatInput = ({ onSend }: { onSend: (text: string) => Promise<void> }) => {
   )
 }
 
-// Audio player component with reactive visualization
-const AudioPlayerWithReactive = ({ src }: { src: string }) => {
-  const audioRef = useRef<HTMLAudioElement>(null)
-  const { setupExistingAudio } = useAudioReactive()
-  
-  useEffect(() => {
-    if (audioRef.current) {
-      setupExistingAudio(audioRef.current)
-    }
-  }, [setupExistingAudio])
-  
-  return <audio ref={audioRef} controls src={src} className="w-full mt-1" />
-}
 
 export default function ExpandableDiaryView({ 
   selectedDate, 
@@ -192,15 +179,6 @@ export default function ExpandableDiaryView({
   if (!messages.length) return null
 
   const firstMessage = messages[0]
-  const hasAudio = Boolean(firstMessage?.signed)
-
-  const handlePlayAudio = (e: React.MouseEvent) => {
-    e.stopPropagation()
-    if (firstMessage?.signed) {
-      const audio = new Audio(firstMessage.signed)
-      audio.play()
-    }
-  }
 
   return (
     <div className="w-full">
@@ -209,14 +187,6 @@ export default function ExpandableDiaryView({
         <CardContent className="p-4">
           <div className="flex items-start justify-between">
             <div className="flex items-start gap-3 flex-1">
-              {hasAudio && (
-                <button
-                  onClick={handlePlayAudio}
-                  className="flex-shrink-0 w-10 h-10 bg-[#ec6a52]/10 rounded-full flex items-center justify-center hover:bg-[#ec6a52]/20 transition-colors"
-                >
-                  <Play size={16} className="text-[#ec6a52] fill-[#ec6a52]" />
-                </button>
-              )}
               <div className="flex-1">
                 <h3 className="font-semibold text-[17px] text-[#212121] mb-1">
                   {selectedDate} の日記
@@ -277,9 +247,6 @@ export default function ExpandableDiaryView({
                     : 'bg-gray-50 dark:bg-gray-800/30 mr-4'}`}
                 >
                   <p className="whitespace-pre-wrap text-sm">{m.text}</p>
-                  {m.signed && (
-                    <AudioPlayerWithReactive src={m.signed} />
-                  )}
                 </div>
               ))}
             </div>
