@@ -39,16 +39,33 @@ export function AutoplayManager({ children }: AutoplayManagerProps) {
     }
   }, []);
 
-  // オーディオの自動再生を試行（初回同意後は常に成功するはず）
+  // オーディオの自動再生を試行（モバイル対応強化）
   const tryAutoplay = useCallback(async (audio: HTMLAudioElement) => {
     try {
       // AudioContextが正常に動作しているか確認
       await ensureAudioContextRunning();
+      
+      // モバイルでは load() を呼んでからplayを試行
+      if (!audio.readyState) {
+        audio.load();
+        await new Promise((resolve) => {
+          audio.addEventListener('canplay', resolve, { once: true });
+        });
+      }
+      
       await audio.play();
       return true;
     } catch (error) {
-      console.error('Audio play failed after consent:', error);
-      throw error;
+      console.error('Audio play failed in AutoplayManager:', error);
+      // モバイルでは再試行
+      try {
+        await new Promise(resolve => setTimeout(resolve, 100));
+        await audio.play();
+        return true;
+      } catch (retryError) {
+        console.error('Audio play retry failed:', retryError);
+        throw retryError;
+      }
     }
   }, []);
 

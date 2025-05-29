@@ -55,17 +55,17 @@ export async function streamTTS(text: string, onProgress?: (progress: number) =>
       }
     };
     
-    // 再生開始（初回同意後は直接再生）
+    // 再生開始（モバイル対応のフォールバック付き）
     try {
       // AudioContextが正常に動作しているか確認
       await ensureAudioContextRunning();
       await audio.play();
     } catch (error) {
-      console.error('Audio play failed after consent:', error);
-      // AutoplayManagerにオーディオ再生要求を送信（フォールバック）
+      console.error('Direct audio play failed, trying via AutoplayManager:', error);
+      // AutoplayManagerにオーディオ再生要求を送信（モバイル必須）
       const event = new CustomEvent('audioPlayRequest', { detail: audio });
       window.dispatchEvent(event);
-      setSpeaking(true);
+      // エラーとして再投げしないでフォールバックに任せる
     }
     
     // コントロール用のオブジェクトを返す

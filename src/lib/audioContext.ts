@@ -74,18 +74,21 @@ export async function handleFirstUserInteraction(): Promise<boolean> {
     // 成功したら権限を記録
     setAudioContextPermissionGranted()
     
-    // ダミーの音声を再生してブラウザの音声許可を確実にする
+    // ダミーの音声を再生してブラウザの音声許可を確実にする（モバイル対応）
     const oscillator = audioContext.createOscillator()
     const gainNode = audioContext.createGain()
     
     oscillator.connect(gainNode)
     gainNode.connect(audioContext.destination)
     
-    // 無音に近い音量で短時間再生
+    // 無音に近い音量で短時間再生（モバイルでも確実に動作するように少し長めに）
     gainNode.gain.setValueAtTime(0.001, audioContext.currentTime)
     oscillator.frequency.setValueAtTime(440, audioContext.currentTime)
     oscillator.start(audioContext.currentTime)
-    oscillator.stop(audioContext.currentTime + 0.001)
+    oscillator.stop(audioContext.currentTime + 0.1) // 0.1秒に延長
+    
+    // モバイルブラウザでの確実な初期化のため少し待機
+    await new Promise(resolve => setTimeout(resolve, 50))
     
     return true
   } catch (error) {
