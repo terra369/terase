@@ -131,7 +131,7 @@ export default function ExpandableDiaryView({
     // Subscribe to deep broadcast channel for text updates only
     supabaseBrowser
       .channel(`diary_${diaryId}`)
-      .on("broadcast", { event: "deep" }, payload => {
+      .on("broadcast", { event: "deep" }, () => {
         // Show HUD notification
         const hudContainer = document.createElement('div')
         document.body.appendChild(hudContainer)
