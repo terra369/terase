@@ -322,7 +322,9 @@ export function BallBot() {
       <Environment preset="city" background={false} backgroundBlurriness={0} />
       
       {/* 基本的な照明を追加して明るくする */}
+      {/* eslint-disable-next-line react/no-unknown-property */}
       <ambientLight intensity={0.5} />
+      {/* eslint-disable-next-line react/no-unknown-property */}
       <pointLight position={[10, 10, 10]} intensity={0.5} />
 
       {/* 浮遊動作を持つグループ（穏やかに） */}
