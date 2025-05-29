@@ -5,6 +5,13 @@
 
 import { useAudioStore } from '@/stores/useAudioStore';
 
+const AUDIO_PERMISSION_KEY = 'terase_audio_permission_granted';
+
+function isAudioPermissionGranted(): boolean {
+  if (typeof window === 'undefined') return false;
+  return localStorage.getItem(AUDIO_PERMISSION_KEY) === 'true';
+}
+
 export async function streamTTS(text: string, onProgress?: (progress: number) => void) {
   try {
     // サーバーサイドAPIエンドポイントを呼び出す
@@ -55,6 +62,28 @@ export async function streamTTS(text: string, onProgress?: (progress: number) =>
     };
     
     // 再生開始（モバイル対応）
+    // 既に許可が与えられている場合は直接再生を試行
+    if (isAudioPermissionGranted()) {
+      try {
+        await audio.play();
+        return {
+          audio,
+          blob: () => blob,
+          stop: () => {
+            audio.pause();
+            setSpeaking(false);
+            if (progressInterval) {
+              clearInterval(progressInterval);
+            }
+          }
+        };
+      } catch (error) {
+        console.error('Audio play failed despite permission granted:', error);
+        // 許可されているはずなのに失敗した場合は、許可状態をリセット
+        localStorage.removeItem(AUDIO_PERMISSION_KEY);
+      }
+    }
+
     try {
       await audio.play();
     } catch (error) {
