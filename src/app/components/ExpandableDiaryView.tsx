@@ -1,11 +1,8 @@
 'use client'
 
-import { useState, useCallback, useEffect, useRef, Suspense } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { Card, CardContent } from "@/components/ui/card"
 import { ChevronDown, ChevronUp, X } from "lucide-react"
-import { Canvas } from '@react-three/fiber'
-import { BallBot } from '@/components/BallBot'
-import { useAudioReactive } from '@/components/hooks/useAudioReactive'
 import { supabaseBrowser } from '@/lib/supabase/browser'
 
 interface DiaryMessage {
@@ -23,47 +20,6 @@ interface ExpandableDiaryViewProps {
   initialMessages: DiaryMessage[]
 }
 
-// Chat input component
-const ChatInput = ({ onSend }: { onSend: (text: string) => Promise<void> }) => {
-  const [message, setMessage] = useState('')
-  const [isSubmitting, setIsSubmitting] = useState(false)
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!message.trim() || isSubmitting) return
-
-    setIsSubmitting(true)
-    try {
-      await onSend(message.trim())
-      setMessage('')
-    } catch (error) {
-      console.error('Error sending message:', error)
-      alert('Failed to send message')
-    } finally {
-      setIsSubmitting(false)
-    }
-  }
-
-  return (
-    <form onSubmit={handleSubmit} className="flex space-x-2 mt-4">
-      <input
-        type="text"
-        value={message}
-        onChange={(e) => setMessage(e.target.value)}
-        placeholder="メッセージを入力..."
-        className="flex-1 p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-        disabled={isSubmitting}
-      />
-      <button
-        type="submit"
-        disabled={isSubmitting}
-        className={`px-4 py-2 rounded-md text-white ${isSubmitting ? 'bg-gray-400' : 'bg-blue-500 hover:bg-blue-600'}`}
-      >
-        {isSubmitting ? '送信中...' : '送信'}
-      </button>
-    </form>
-  )
-}
 
 
 export default function ExpandableDiaryView({ 
@@ -73,7 +29,6 @@ export default function ExpandableDiaryView({
 }: ExpandableDiaryViewProps) {
   const [isExpanded, setIsExpanded] = useState(false)
   const [messages, setMessages] = useState<DiaryMessage[]>(initialMessages)
-  const { speak } = useAudioReactive()
 
   // Update messages when initialMessages changes and sign audio URLs
   useEffect(() => {
@@ -107,49 +62,6 @@ export default function ExpandableDiaryView({
     setMessages((prev) => [...prev, m])
   }, [])
 
-  // Handle sending new messages
-  const handleSend = async (text: string) => {
-    if (!diaryId) return
-
-    // Add user message to UI immediately
-    const tempUserMsg: DiaryMessage = {
-      id: Date.now(),
-      role: 'user',
-      text,
-      audio_url: undefined,
-      created_at: new Date().toISOString()
-    }
-    setMessages(prev => [...prev, tempUserMsg])
-
-    // Send to AI function
-    const { data } = await fetch("/api/functions/v1/ai_reply", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text, diaryId })
-    }).then(res => res.json())
-
-    // Speak the reply
-    if (data?.replyText) {
-      await speak(data.replyText)
-    }
-
-    // Subscribe to deep broadcast channel
-    supabaseBrowser
-      .channel(`diary_${diaryId}`)
-      .on("broadcast", { event: "deep" }, payload => {
-        // Show HUD notification
-        const hudContainer = document.createElement('div')
-        document.body.appendChild(hudContainer)
-        const hudToast = document.createElement('div')
-        hudToast.innerHTML = 'AI is processing a deep response...'
-        hudToast.className = 'bg-blue-900/80 text-blue-100 p-3 rounded-lg fixed top-4 right-4 z-50'
-        hudContainer.appendChild(hudToast)
-        setTimeout(() => hudContainer.remove(), 5000)
-
-        if (payload.text) speak(payload.text)
-      })
-      .subscribe()
-  }
 
   // Use realtime updates if diaryId is available
   useEffect(() => {
@@ -177,8 +89,6 @@ export default function ExpandableDiaryView({
   }, [diaryId, handleInsert])
 
   if (!messages.length) return null
-
-  const firstMessage = messages[0]
 
   return (
     <div className="w-full">
@@ -226,16 +136,6 @@ export default function ExpandableDiaryView({
               </button>
             </div>
 
-            {/* 3D Visualization */}
-            <div className="h-40 w-full rounded-lg overflow-hidden mb-4 border border-blue-100 dark:border-blue-900 shadow-md">
-              <Canvas camera={{ position: [0, 0, 3] }}>
-                <Suspense fallback={null}>
-                  <BallBot />
-                  {/* eslint-disable-next-line react/no-unknown-property */}
-                  <ambientLight intensity={0.4} />
-                </Suspense>
-              </Canvas>
-            </div>
 
             {/* Chat messages */}
             <div className="space-y-3 max-h-[40vh] overflow-y-auto">
@@ -251,8 +151,6 @@ export default function ExpandableDiaryView({
               ))}
             </div>
 
-            {/* Chat input - only show if diaryId exists */}
-            {diaryId && <ChatInput onSend={handleSend} />}
           </CardContent>
         </Card>
       )}
