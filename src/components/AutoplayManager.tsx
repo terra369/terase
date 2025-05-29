@@ -26,15 +26,15 @@ export function AutoplayManager({ children }: AutoplayManagerProps) {
 
   // オーディオの自動再生を試行し、失敗した場合はユーザーインタラクションを要求
   const tryAutoplay = useCallback(async (audio: HTMLAudioElement) => {
-    // 既に許可が与えられている場合は直接再生を試行
+    // 既に許可が与えられている場合は直接再生（確認なし）
     if (isAudioPermissionGranted()) {
       try {
         await audio.play();
         return true;
       } catch (error) {
         console.error('Audio play failed despite permission granted:', error);
-        // 許可されているはずなのに失敗した場合は、許可状態をリセット
-        localStorage.removeItem(AUDIO_PERMISSION_KEY);
+        // 許可されているはずなのに失敗した場合でも、再度確認を求めず静かに失敗
+        return false;
       }
     }
 

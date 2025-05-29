@@ -18,8 +18,8 @@ export const ANIMATION_CONSTANTS = {
   
   // Animation durations
   TRANSITION_DURATION_FRAMES: 210, // ~3.5 seconds at 60fps
-  MIN_SPEAKING_DURATION: 7, // seconds
-  CHAR_TO_DURATION_RATIO: 0.6, // seconds per character
+  MIN_SPEAKING_DURATION: 4, // seconds
+  CHAR_TO_DURATION_RATIO: 0.55, // seconds per character
   FPS: 60,
   
   // Animation phases

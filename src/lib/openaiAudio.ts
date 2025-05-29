@@ -62,10 +62,12 @@ export async function streamTTS(text: string, onProgress?: (progress: number) =>
     };
     
     // 再生開始（モバイル対応）
-    // 既に許可が与えられている場合は直接再生を試行
+    // 既に許可が与えられている場合は直接再生（確認なし）
     if (isAudioPermissionGranted()) {
       try {
         await audio.play();
+        // 許可済みなので成功したらそのまま制御オブジェクトを返す
+        localStorage.setItem(AUDIO_PERMISSION_KEY, 'true'); // 許可状態を再確認
         return {
           audio,
           blob: () => blob,
@@ -79,13 +81,27 @@ export async function streamTTS(text: string, onProgress?: (progress: number) =>
         };
       } catch (error) {
         console.error('Audio play failed despite permission granted:', error);
-        // 許可されているはずなのに失敗した場合は、許可状態をリセット
-        localStorage.removeItem(AUDIO_PERMISSION_KEY);
+        // 許可されているはずなのに失敗した場合でも、再度確認を求めない
+        // 発話状態をリセットして処理を継続
+        setSpeaking(false);
+        return {
+          audio,
+          blob: () => blob,
+          stop: () => {
+            audio.pause();
+            setSpeaking(false);
+            if (progressInterval) {
+              clearInterval(progressInterval);
+            }
+          }
+        };
       }
     }
 
     try {
       await audio.play();
+      // 初回再生成功時に許可状態を保存
+      localStorage.setItem(AUDIO_PERMISSION_KEY, 'true');
     } catch (error) {
       if (error instanceof Error && error.name === 'NotAllowedError') {
         console.warn('Audio autoplay blocked by browser policy. Requesting user interaction...');
