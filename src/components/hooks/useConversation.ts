@@ -195,9 +195,9 @@ export function useConversation(diaryId?: number) {
       console.error('TTS error:', error);
       const errorMessage = error instanceof Error ? error.message : '音声の再生に失敗しました';
       setError(`音声再生エラー: ${errorMessage}`);
-      setSpeaking(false);
     } finally {
       setState('idle');
+      setSpeaking(false);
     }
   }, [setState, setSpeaking, setError]);
 
