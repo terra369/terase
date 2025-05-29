@@ -7,29 +7,43 @@ export default function VoiceRecorder({
 }: {
     onStateChange: (isRecording: boolean, blob?: Blob) => void
 }) {
-    const { recording, start, stop } = useRecorder();
+    const { recording, start, stop, error } = useRecorder();
     const [url, setUrl] = useState<string>();
 
     const handleToggleRecording = async () => {
-        if (recording) {
-            const blob = await stop();
-            setUrl(URL.createObjectURL(blob));
-            onStateChange(false, blob);
-        } else {
-            setUrl(undefined); // Clear previous recording
-            onStateChange(true);
-            start();
+        try {
+            if (recording) {
+                const blob = await stop();
+                setUrl(URL.createObjectURL(blob));
+                onStateChange(false, blob);
+            } else {
+                setUrl(undefined); // Clear previous recording
+                onStateChange(true);
+                await start();
+            }
+        } catch (err) {
+            console.error('VoiceRecorder error:', err);
+            onStateChange(false);
         }
     };
 
     return (
         <div className="space-y-4">
+            {error && (
+                <div className="bg-red-500 text-white rounded-lg px-3 py-2 text-sm text-center">
+                    {error}
+                </div>
+            )}
+            
             <div className="flex justify-center">
                 <button
                     className={`w-16 h-16 md:w-20 md:h-20 lg:w-24 lg:h-24 rounded-full flex items-center justify-center transition-all touch-manipulation ${recording
                         ? 'bg-red-500 hover:bg-red-600 active:bg-red-700 animate-pulse'
+                        : error
+                        ? 'bg-gray-400 cursor-not-allowed'
                         : 'bg-blue-500 hover:bg-blue-600 active:bg-blue-700'}`}
                     onClick={handleToggleRecording}
+                    disabled={!!error}
                 >
                     <span className={`${recording 
                         ? 'w-6 h-6 md:w-7 md:h-7 lg:w-8 lg:h-8 rounded-sm bg-white' 

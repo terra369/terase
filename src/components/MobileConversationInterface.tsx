@@ -11,7 +11,7 @@ import { useTodayDiary } from '@/components/hooks/useTodayDiary';
 import { useConversationStore } from '@/stores/useConversationStore';
 
 export default function MobileConversationInterface() {
-  const { recording, start, stop } = useRecorder();
+  const { recording, start, stop, error: recorderError } = useRecorder();
   const { diaryId } = useTodayDiary();
   const { state, processConversation, startListening, stopConversation } = useConversation(diaryId || undefined);
   const {
@@ -20,6 +20,9 @@ export default function MobileConversationInterface() {
     error,
     setError
   } = useConversationStore();
+  
+  // Combine recorder errors with conversation errors
+  const displayError = recorderError || error;
 
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -49,7 +52,8 @@ export default function MobileConversationInterface() {
       }
     } catch (error) {
       console.error('Recording error:', error);
-      setError('録音に失敗しました');
+      const errorMessage = error instanceof Error ? error.message : '録音に失敗しました';
+      setError(errorMessage);
       stopConversation();
     }
   };
@@ -138,11 +142,11 @@ export default function MobileConversationInterface() {
         </div>
 
         {/* Error display */}
-        {error && (
+        {displayError && (
           <div className="absolute top-20 left-1/2 transform -translate-x-1/2 z-10 px-4">
             <div className="bg-red-500 text-white rounded-lg px-4 py-2 shadow-lg max-w-md">
               <div className="flex items-center justify-between">
-                <span className="text-sm">{error}</span>
+                <span className="text-sm">{displayError}</span>
                 <button
                   onClick={() => setError(null)}
                   className="ml-2 text-white hover:text-red-200"
