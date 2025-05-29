@@ -132,16 +132,24 @@ export default function Calendar({ selectedDate, onDateSelect }: CalendarProps) 
                 )
               }
 
-              // Handle current day (today) without background
+              // Handle current day (today) - show with background like other days
               if (isToday && !isSelected) {
                 return (
-                  <button
-                    key={`day-${dayNumber}`}
-                    onClick={() => handleDateClick(date)}
-                    className="w-12 h-12 font-['Euclid_Circular_B-SemiBold'] font-semibold text-[#212121] text-[15px] text-center flex items-center justify-center hover:bg-gray-200 rounded-full transition-colors"
-                  >
-                    {dayNumber}
-                  </button>
+                  <div key={`day-${dayNumber}`} className="relative w-[50px] h-12">
+                    <button
+                      onClick={() => handleDateClick(date)}
+                      className="relative w-12 h-12 hover:opacity-80 transition-opacity"
+                    >
+                      <div
+                        className={`absolute w-[30px] h-[30px] top-[9px] left-[9px] 
+                          ${hasDiary ? 'bg-[#ec6a52]' : 'bg-[#21212157]'} 
+                          rounded-[39px]`}
+                      />
+                      <div className="absolute top-0 left-0 font-['Euclid_Circular_B-Regular'] font-normal text-white text-[15px] w-12 h-12 text-center flex items-center justify-center">
+                        {dayNumber}
+                      </div>
+                    </button>
+                  </div>
                 )
               }
 
