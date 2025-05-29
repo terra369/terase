@@ -15,8 +15,9 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "terase - Voice Gratitude Journal",
   description: "A gratitude journal SNS with personal rainbow JARVIS companion",
-  viewport: "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no",
 };
+
+export const viewport = "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no";
 
 export default function RootLayout({
   children,
@@ -25,9 +26,6 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ja">
-      <head>
-        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased overflow-x-hidden`}
       >
