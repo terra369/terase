@@ -105,34 +105,36 @@ export default function MobileConversationInterface() {
 
         {/* Microphone button */}
         <div className="absolute bottom-[40px] md:bottom-16 lg:bottom-20 left-0 right-0 flex flex-col items-center gap-3 md:gap-4">
-          {recording ? (
-            // 録音中: 同心円デザイン
-            <div className="w-[122px] h-[122px] md:w-[150px] md:h-[150px] lg:w-[180px] lg:h-[180px] bg-[#ec6a5240] rounded-full flex items-center justify-center">
-              <div className="w-[94px] h-[94px] md:w-[115px] md:h-[115px] lg:w-[140px] lg:h-[140px] bg-[#ec6a5280] rounded-full flex items-center justify-center">
-                <Button
-                  onClick={handleToggleRecording}
-                  className="w-[72px] h-[72px] md:w-[88px] md:h-[88px] lg:w-[100px] lg:h-[100px] bg-[#ec6a52] rounded-full hover:bg-[#ec6a52]/90 border-none flex items-center justify-center p-0"
-                  size="icon"
-                >
-                  <Mic className="w-8 h-8 md:w-10 md:h-10 lg:w-12 lg:h-12 text-white" />
-                </Button>
+          {/* Container with fixed size to prevent position shift */}
+          <div className="w-[122px] h-[122px] md:w-[150px] md:h-[150px] lg:w-[180px] lg:h-[180px] flex items-center justify-center">
+            {recording ? (
+              // 録音中: 同心円デザイン
+              <div className="w-[122px] h-[122px] md:w-[150px] md:h-[150px] lg:w-[180px] lg:h-[180px] bg-[#ec6a5240] rounded-full flex items-center justify-center absolute">
+                <div className="w-[94px] h-[94px] md:w-[115px] md:h-[115px] lg:w-[140px] lg:h-[140px] bg-[#ec6a5280] rounded-full flex items-center justify-center">
+                  <Button
+                    onClick={handleToggleRecording}
+                    className="w-[72px] h-[72px] md:w-[88px] md:h-[88px] lg:w-[100px] lg:h-[100px] bg-[#ec6a52] rounded-full hover:bg-[#ec6a52]/90 border-none flex items-center justify-center p-0"
+                    size="icon"
+                  >
+                    <Mic className="w-8 h-8 md:w-10 md:h-10 lg:w-12 lg:h-12 text-white" />
+                  </Button>
+                </div>
               </div>
-            </div>
-          ) : (
-            // 非録音時: シンプルなボタン
-            <Button
-              onClick={handleToggleRecording}
-              disabled={isProcessing || isSpeaking}
-              className={`w-[72px] h-[72px] md:w-[88px] md:h-[88px] lg:w-[100px] lg:h-[100px] rounded-full flex items-center justify-center transition-all hover:scale-105 ${(isProcessing || isSpeaking)
-                ? 'bg-gray-400 cursor-not-allowed'
-                : 'bg-[#212121] hover:bg-[#333333]'
-                }`}
-              size="icon"
-            >
-              <Mic className="w-8 h-8 md:w-10 md:h-10 lg:w-12 lg:h-12 text-white" />
-            </Button>
-          )}
-
+            ) : (
+              // 非録音時: シンプルなボタン
+              <Button
+                onClick={handleToggleRecording}
+                disabled={isProcessing || isSpeaking}
+                className={`w-[72px] h-[72px] md:w-[88px] md:h-[88px] lg:w-[100px] lg:h-[100px] rounded-full flex items-center justify-center transition-colors ${(isProcessing || isSpeaking)
+                  ? 'bg-gray-400 cursor-not-allowed'
+                  : 'bg-[#212121] hover:bg-[#333333]'
+                  }`}
+                size="icon"
+              >
+                <Mic className="w-8 h-8 md:w-10 md:h-10 lg:w-12 lg:h-12 text-white" />
+              </Button>
+            )}
+          </div>
         </div>
 
         {/* Error display */}

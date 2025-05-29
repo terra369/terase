@@ -146,7 +146,7 @@ export default function ConversationInterface() {
           <button
             onClick={handleToggleRecording}
             disabled={isProcessing || isSpeaking}
-            className={`w-20 h-20 rounded-full flex items-center justify-center transition-all transform hover:scale-105 active:scale-95 shadow-lg ${recording
+            className={`w-20 h-20 rounded-full flex items-center justify-center transition-colors shadow-lg ${recording
                 ? 'bg-red-500 hover:bg-red-600 animate-pulse'
                 : isActive || isSpeaking
                   ? 'bg-gray-400 cursor-not-allowed'
