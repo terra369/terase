@@ -66,8 +66,6 @@ export async function streamTTS(text: string, onProgress?: (progress: number) =>
     if (isAudioPermissionGranted()) {
       try {
         await audio.play();
-        // 許可済みなので成功したらそのまま制御オブジェクトを返す
-        localStorage.setItem(AUDIO_PERMISSION_KEY, 'true'); // 許可状態を再確認
         return {
           audio,
           blob: () => blob,
