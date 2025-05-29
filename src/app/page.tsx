@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation'
 import { supabaseServer } from "@/lib/supabase/server";
-import ConversationInterface from '@/components/ConversationInterface'
+import MobileConversationInterface from '@/components/MobileConversationInterface'
 
 export default async function Home() {
   const supabase = await supabaseServer()
@@ -8,9 +8,5 @@ export default async function Home() {
 
   if (!user) redirect('/login')
 
-  return (
-    <main className="relative h-screen">
-      <ConversationInterface />
-    </main>
-  )
+  return <MobileConversationInterface />
 }

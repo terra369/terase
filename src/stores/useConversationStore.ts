@@ -39,10 +39,6 @@ type ConversationStore = {
   sessionId: string;
   startNewSession: () => void;
   
-  // UIの設定
-  showTranscript: boolean;
-  toggleTranscript: () => void;
-  
   // 音声処理
   currentAudioBlob: Blob | null;
   setCurrentAudioBlob: (blob: Blob | null) => void;
@@ -95,12 +91,6 @@ export const useConversationStore = create<ConversationStore>((set) => ({
     error: null,
     state: 'idle'
   }),
-  
-  // UI設定
-  showTranscript: true,
-  toggleTranscript: () => set((state) => ({ 
-    showTranscript: !state.showTranscript 
-  })),
   
   // 音声処理
   currentAudioBlob: null,
