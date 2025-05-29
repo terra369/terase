@@ -125,7 +125,8 @@ export function useConversation(diaryId?: number) {
       return { transcript, audioPath };
     } catch (error) {
       console.error('Transcription error:', error);
-      setError('音声の文字起こしに失敗しました');
+      const errorMessage = error instanceof Error ? error.message : '音声の文字起こしに失敗しました';
+      setError(`文字起こしエラー: ${errorMessage}`);
       setState('idle');
       throw error;
     }
@@ -172,7 +173,8 @@ export function useConversation(diaryId?: number) {
       return aiResponse;
     } catch (error) {
       console.error('AI response error:', error);
-      setError('AI応答の生成に失敗しました');
+      const errorMessage = error instanceof Error ? error.message : 'AI応答の生成に失敗しました';
+      setError(`AI応答エラー: ${errorMessage}`);
       setState('idle');
       throw error;
     }
@@ -191,10 +193,11 @@ export function useConversation(diaryId?: number) {
       
     } catch (error) {
       console.error('TTS error:', error);
-      setError('音声の再生に失敗しました');
-      setSpeaking(false);
+      const errorMessage = error instanceof Error ? error.message : '音声の再生に失敗しました';
+      setError(`音声再生エラー: ${errorMessage}`);
     } finally {
       setState('idle');
+      setSpeaking(false);
     }
   }, [setState, setSpeaking, setError]);
 
@@ -238,7 +241,21 @@ export function useConversation(diaryId?: number) {
 
     } catch (error) {
       console.error('Conversation processing error:', error);
-      setError('会話の処理に失敗しました');
+      let errorMessage = '会話の処理に失敗しました';
+      
+      if (error instanceof Error) {
+        if (error.message.includes('getUserMedia')) {
+          errorMessage = 'マイクへのアクセスが拒否されました。ブラウザの設定でマイクを許可してください。';
+        } else if (error.message.includes('MediaRecorder')) {
+          errorMessage = 'このブラウザでは音声録音がサポートされていません。別のブラウザをお試しください。';
+        } else if (error.message.includes('network') || error.message.includes('fetch')) {
+          errorMessage = 'ネットワークエラーが発生しました。インターネット接続を確認してください。';
+        } else {
+          errorMessage = `エラー: ${error.message}`;
+        }
+      }
+      
+      setError(errorMessage);
       setState('idle');
     } finally {
       setCurrentAudioBlob(null);

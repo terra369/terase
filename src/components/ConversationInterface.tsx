@@ -10,11 +10,14 @@ import { useConversationStore } from '@/stores/useConversationStore';
 import { useAudioStore } from '@/stores/useAudioStore';
 
 export default function ConversationInterface() {
-  const { recording, start, stop } = useRecorder();
+  const { recording, start, stop, error: recorderError } = useRecorder();
   const { diaryId } = useTodayDiary();
   const { state, processConversation, startListening, stopConversation } = useConversation(diaryId || undefined);
   const { setRecording, setLiveTranscript, error, setError } = useConversationStore();
   const { isSpeaking } = useAudioStore();
+  
+  // Combine recorder errors with conversation errors
+  const displayError = recorderError || error;
 
   const [isInitialized, setIsInitialized] = useState(false);
 
@@ -38,7 +41,8 @@ export default function ConversationInterface() {
       }
     } catch (error) {
       console.error('Recording error:', error);
-      setError('録音に失敗しました');
+      const errorMessage = error instanceof Error ? error.message : '録音に失敗しました';
+      setError(errorMessage);
       stopConversation();
     }
   };
@@ -122,11 +126,11 @@ export default function ConversationInterface() {
       </div>
 
       {/* エラー表示 */}
-      {error && (
+      {displayError && (
         <div className="absolute top-20 left-1/2 transform -translate-x-1/2 z-10">
           <div className="bg-red-500 text-white rounded-lg px-4 py-2 shadow-lg max-w-md">
             <div className="flex items-center justify-between">
-              <span className="text-sm">{error}</span>
+              <span className="text-sm">{displayError}</span>
               <button
                 onClick={clearError}
                 className="ml-2 text-white hover:text-red-200"

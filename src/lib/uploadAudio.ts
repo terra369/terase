@@ -1,11 +1,25 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 
+// Get file extension from MIME type
+function getFileExtension(mimeType: string): string {
+  const mimeToExt: Record<string, string> = {
+    'audio/webm': 'webm',
+    'audio/mp4': 'm4a',
+    'audio/ogg': 'ogg',
+    'audio/wav': 'wav',
+    'audio/webm;codecs=opus': 'webm'
+  }
+  
+  return mimeToExt[mimeType] || 'webm'
+}
+
 export async function uploadAudio(
   blob: Blob,
   userId: string,
   supabase: SupabaseClient
 ) {
-  const path = `${userId}/${Date.now()}.webm`;
+  const fileExtension = getFileExtension(blob.type)
+  const path = `${userId}/${Date.now()}.${fileExtension}`;
 
   /* 1) 署名付き URL + token */
   const { data: up, error: upErr } =
@@ -20,7 +34,7 @@ export async function uploadAudio(
     await supabase.storage
       .from('diary-audio')
       .uploadToSignedUrl(up.path, up.token, blob, {
-        contentType: 'audio/webm',
+        contentType: blob.type || 'audio/webm',
       });
 
   console.log('uploadToSignedUrl →', { putData, putErr });
