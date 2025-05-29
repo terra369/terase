@@ -72,7 +72,7 @@ export async function handleFirstUserInteraction(): Promise<boolean> {
     if (!audioContext) return false
     
     // iOS Safariの検出
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as unknown as { MSStream?: unknown }).MSStream
     const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent)
     
     // ダミーの音声を再生してブラウザの音声許可を確実にする

@@ -18,7 +18,7 @@ export function AutoplayManager({ children }: AutoplayManagerProps) {
   // 初回ロード時に同意が必要かチェック
   useEffect(() => {
     // iOS Safariの検出
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as unknown as { MSStream?: unknown }).MSStream;
     const hasContextPermission = isAudioContextPermissionGranted();
     
     // iOSの場合は常に許諾を表示、それ以外は保存された許諾を確認
