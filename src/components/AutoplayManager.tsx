@@ -2,6 +2,19 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAudioStore } from '@/stores/useAudioStore';
 
+const AUDIO_PERMISSION_KEY = 'terase_audio_permission_granted';
+
+function setAudioPermissionGranted() {
+  if (typeof window !== 'undefined') {
+    localStorage.setItem(AUDIO_PERMISSION_KEY, 'true');
+  }
+}
+
+function isAudioPermissionGranted(): boolean {
+  if (typeof window === 'undefined') return false;
+  return localStorage.getItem(AUDIO_PERMISSION_KEY) === 'true';
+}
+
 interface AutoplayManagerProps {
   children: React.ReactNode;
 }
@@ -13,8 +26,22 @@ export function AutoplayManager({ children }: AutoplayManagerProps) {
 
   // オーディオの自動再生を試行し、失敗した場合はユーザーインタラクションを要求
   const tryAutoplay = useCallback(async (audio: HTMLAudioElement) => {
+    // 既に許可が与えられている場合は直接再生を試行
+    if (isAudioPermissionGranted()) {
+      try {
+        await audio.play();
+        return true;
+      } catch (error) {
+        console.error('Audio play failed despite permission granted:', error);
+        // 許可されているはずなのに失敗した場合は、許可状態をリセット
+        localStorage.removeItem(AUDIO_PERMISSION_KEY);
+      }
+    }
+
     try {
       await audio.play();
+      // 成功した場合は許可状態を保存
+      setAudioPermissionGranted();
       return true;
     } catch (error) {
       if (error instanceof Error && error.name === 'NotAllowedError') {
@@ -32,6 +59,8 @@ export function AutoplayManager({ children }: AutoplayManagerProps) {
     if (pendingAudio) {
       try {
         await pendingAudio.play();
+        // 成功した場合は許可状態を保存
+        setAudioPermissionGranted();
         setNeedsInteraction(false);
         setPendingAudio(null);
       } catch (error) {
