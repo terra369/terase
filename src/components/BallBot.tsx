@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useRef, useEffect, useState } from 'react';
 import { useFrame, extend } from '@react-three/fiber';
 import { Icosahedron, shaderMaterial, Environment, Float } from '@react-three/drei';
 import * as THREE from 'three';
@@ -172,6 +172,30 @@ export function BallBot() {
   // メッセージリストを取得
   const messages = useConversationStore((s) => s.messages);
   
+  // レスポンシブなスケールファクターを管理
+  const [responsiveScale, setResponsiveScale] = useState(1);
+  
+  // 画面サイズに基づいてスケールを調整
+  useEffect(() => {
+    const updateScale = () => {
+      const width = window.innerWidth;
+      if (width < 768) {
+        // モバイル: 小さめに
+        setResponsiveScale(0.8);
+      } else if (width < 1024) {
+        // タブレット: 中間サイズ
+        setResponsiveScale(1.0);
+      } else {
+        // デスクトップ: 大きめに
+        setResponsiveScale(1.2);
+      }
+    };
+    
+    updateScale();
+    window.addEventListener('resize', updateScale);
+    return () => window.removeEventListener('resize', updateScale);
+  }, []);
+  
   // 状態のスムーズな遷移用
   const stateValues = useRef({
     thinking: 0,
@@ -282,8 +306,8 @@ export function BallBot() {
       unis.uSpeaking.value = effectiveSpeaking; // 余韻効果を含む値を使用
       unis.uStateTransition.value = stateValues.current.transition;
 
-      // 状態に応じたスケール変化（控えめに）
-      const baseScale = 1 + amp * 0.1;
+      // 状態に応じたスケール変化（控えめに） + レスポンシブスケール適用
+      const baseScale = (1 + amp * 0.1) * responsiveScale;
       const thinkingScale = 1 + stateValues.current.thinking * 0.05 * Math.sin(t * 2);
       const speakingScale = 1 + effectiveSpeaking * 0.1; // 余韻効果を含む
       meshRef.current.scale.setScalar(baseScale * thinkingScale * speakingScale);

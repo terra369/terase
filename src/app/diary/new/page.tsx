@@ -96,15 +96,15 @@ export default function NewDiary() {
     };
 
     return (
-        <main className="p-6 max-w-xl mx-auto space-y-6">
-            <h1 className="text-2xl font-bold text-center">
+        <main className="p-4 md:p-6 max-w-[390px] md:max-w-xl lg:max-w-2xl mx-auto space-y-4 md:space-y-6">
+            <h1 className="text-xl md:text-2xl lg:text-3xl font-bold text-center">
                 <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-cyan-600">
                     Speak Your Gratitude
                 </span>
             </h1>
 
-            {/* 3D Visualization */}
-            <div className="h-60 w-full rounded-lg overflow-hidden mb-4 border border-blue-100 dark:border-blue-900 shadow-md">
+            {/* 3D Visualization - Responsive height */}
+            <div className="h-48 md:h-60 lg:h-72 w-full rounded-lg overflow-hidden mb-4 border border-blue-100 dark:border-blue-900 shadow-md">
                 <Canvas camera={{ position: [0, 0, 3] }}>
                     <Suspense fallback={null}>
                         <BallBot />
@@ -114,11 +114,11 @@ export default function NewDiary() {
                 </Canvas>
             </div>
 
-            <div className="bg-white/50 dark:bg-gray-900/50 p-4 rounded-lg shadow-md backdrop-blur-sm">
+            <div className="bg-white/50 dark:bg-gray-900/50 p-3 md:p-4 lg:p-6 rounded-lg shadow-md backdrop-blur-sm">
                 <VoiceRecorder onStateChange={handleRecordingState} />
                 {status && (
-                    <div className="mt-4 p-3 rounded-md bg-blue-50 dark:bg-blue-900/20 text-blue-800 dark:text-blue-200 animate-pulse">
-                        <p className="text-sm">{status}</p>
+                    <div className="mt-3 md:mt-4 p-3 rounded-md bg-blue-50 dark:bg-blue-900/20 text-blue-800 dark:text-blue-200 animate-pulse">
+                        <p className="text-sm md:text-base">{status}</p>
                     </div>
                 )}
             </div>

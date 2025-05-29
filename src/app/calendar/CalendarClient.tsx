@@ -52,22 +52,22 @@ export default function CalendarClient() {
 
   return (
     <div className="bg-[#ecedf3] flex flex-row justify-center w-full min-h-screen">
-      <div className="bg-[#ecedf3] w-full max-w-[390px] relative flex flex-col">
-        <header className="flex items-center justify-center pt-[60px] px-6 relative">
+      <div className="bg-[#ecedf3] w-full max-w-[390px] md:max-w-2xl lg:max-w-4xl relative flex flex-col">
+        <header className="flex items-center justify-center pt-12 md:pt-16 lg:pt-20 px-4 md:px-6 lg:px-8 relative">
           <button 
             onClick={handleBackClick}
-            className="absolute left-6"
+            className="absolute left-4 md:left-6 lg:left-8 touch-manipulation"
           >
-            <ArrowLeft className="w-7 h-7 text-[#212121]" />
+            <ArrowLeft className="w-6 h-6 md:w-7 md:h-7 lg:w-8 lg:h-8 text-[#212121]" />
           </button>
-          <h1 className="font-['Bakbak_One-Regular'] font-normal text-[#212121] text-[28px] text-center tracking-[0]">
+          <h1 className="font-['Bakbak_One-Regular'] font-normal text-[#212121] text-2xl md:text-3xl lg:text-4xl text-center tracking-[0]">
             review
           </h1>
         </header>
 
         <main className="flex flex-col flex-1 w-full relative">
           {/* Calendar Section */}
-          <div className="w-full px-2">
+          <div className="w-full px-2 md:px-4 lg:px-6">
             <Calendar 
               selectedDate={selectedDate} 
               onDateSelect={handleDateSelect}
@@ -75,7 +75,7 @@ export default function CalendarClient() {
           </div>
 
           {/* Diary Content Section */}
-          <div className="w-full px-4 pb-6">
+          <div className="w-full px-4 md:px-6 lg:px-8 pb-6">
             {diaryData && diaryData.messages.length > 0 ? (
               <ExpandableDiaryView
                 selectedDate={formattedDate}
@@ -84,7 +84,7 @@ export default function CalendarClient() {
               />
             ) : (
               <div className="flex flex-col w-full items-center justify-center gap-4 py-8">
-                <p className="text-[#212121] text-center font-['Euclid_Circular_B-Regular']">
+                <p className="text-[#212121] text-center text-sm md:text-base lg:text-lg font-['Euclid_Circular_B-Regular']">
                   {formattedDate === format(new Date(), 'yyyy-MM-dd') 
                     ? '今日はまだ日記がありません' 
                     : 'この日の日記はありません'}

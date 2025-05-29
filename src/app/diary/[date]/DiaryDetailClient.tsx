@@ -49,17 +49,17 @@ export default function DiaryDetailClient(
     useDiaryRealtime(diaryId, handleInsert);
 
     return (
-        <div className="space-y-4 relative">
+        <div className="space-y-3 md:space-y-4 relative">
             {/* Chat messages */}
-            <div className="space-y-4 max-h-[50vh] overflow-y-auto p-2">
+            <div className="space-y-3 md:space-y-4 max-h-[60vh] md:max-h-[50vh] overflow-y-auto p-1 md:p-2">
                 {messages.map((m) => (
                     <div
                         key={m.id}
-                        className={`p-3 rounded-lg ${m.role === 'ai'
-                            ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-800 dark:text-blue-200 ml-4'
-                            : 'bg-gray-50 dark:bg-gray-800/30 mr-4'}`}
+                        className={`p-3 md:p-4 rounded-lg text-sm md:text-base ${m.role === 'ai'
+                            ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-800 dark:text-blue-200 ml-2 md:ml-4'
+                            : 'bg-gray-50 dark:bg-gray-800/30 mr-2 md:mr-4'}`}
                     >
-                        <p className="whitespace-pre-wrap">{m.text}</p>
+                        <p className="whitespace-pre-wrap leading-relaxed">{m.text}</p>
                     </div>
                 ))}
             </div>
