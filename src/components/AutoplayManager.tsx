@@ -33,7 +33,17 @@ export function AutoplayManager({ children }: AutoplayManagerProps) {
         return true;
       } catch (error) {
         console.error('Audio play failed despite permission granted:', error);
-        // 許可されているはずなのに失敗した場合でも、再度確認を求めず静かに失敗
+        // 許可されているはずなのに失敗した場合の処理
+        if (error instanceof Error && (['NotAllowedError', 'NotSupportedError'].includes(error.name))) {
+          // 明確に許可関連のエラーの場合のみ許可状態をリセット
+          console.warn('Permission-related error in autoplay manager, resetting permission state');
+          localStorage.removeItem(AUDIO_PERMISSION_KEY);
+          setPendingAudio(audio);
+          setNeedsInteraction(true);
+        } else {
+          // その他のエラーは許可状態を維持し、静かに失敗
+          console.warn('Audio playback failed with non-permission error in autoplay manager');
+        }
         return false;
       }
     }
@@ -44,12 +54,13 @@ export function AutoplayManager({ children }: AutoplayManagerProps) {
       setAudioPermissionGranted();
       return true;
     } catch (error) {
-      if (error instanceof Error && error.name === 'NotAllowedError') {
-        console.warn('Audio autoplay blocked, requiring user interaction');
+      if (error instanceof Error && (['NotAllowedError', 'NotSupportedError', 'AbortError'].includes(error.name))) {
+        console.warn('Audio autoplay blocked, requiring user interaction:', error.name);
         setPendingAudio(audio);
         setNeedsInteraction(true);
         return false;
       }
+      console.error('Unexpected audio error:', error);
       throw error;
     }
   }, []);

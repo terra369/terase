@@ -81,9 +81,21 @@ export async function streamTTS(text: string, onProgress?: (progress: number) =>
         };
       } catch (error) {
         console.error('Audio play failed despite permission granted:', error);
-        // 許可されているはずなのに失敗した場合でも、再度確認を求めない
-        // 発話状態をリセットして処理を継続
-        setSpeaking(false);
+        // 許可されているはずなのに失敗した場合の処理
+        if (error instanceof Error && (['NotAllowedError', 'NotSupportedError'].includes(error.name))) {
+          // 明確に許可関連のエラーの場合のみ許可状態をリセット
+          console.warn('Permission-related error occurred, resetting permission state');
+          localStorage.removeItem(AUDIO_PERMISSION_KEY);
+          // AutoplayManagerにオーディオ再生要求を送信
+          const event = new CustomEvent('audioPlayRequest', { detail: audio });
+          window.dispatchEvent(event);
+          // 発話状態は維持（ユーザーがタップするまで待機）
+          setSpeaking(true);
+        } else {
+          // その他のエラー（ネットワークエラーなど）の場合は許可状態は維持し、静かに失敗
+          console.warn('Audio playback failed with non-permission error, maintaining permission state');
+          setSpeaking(false);
+        }
         return {
           audio,
           blob: () => blob,
@@ -103,8 +115,8 @@ export async function streamTTS(text: string, onProgress?: (progress: number) =>
       // 初回再生成功時に許可状態を保存
       localStorage.setItem(AUDIO_PERMISSION_KEY, 'true');
     } catch (error) {
-      if (error instanceof Error && error.name === 'NotAllowedError') {
-        console.warn('Audio autoplay blocked by browser policy. Requesting user interaction...');
+      if (error instanceof Error && (['NotAllowedError', 'NotSupportedError', 'AbortError'].includes(error.name))) {
+        console.warn('Audio autoplay blocked by browser policy. Requesting user interaction...', error.name);
         // AutoplayManagerにオーディオ再生要求を送信
         const event = new CustomEvent('audioPlayRequest', { detail: audio });
         window.dispatchEvent(event);
