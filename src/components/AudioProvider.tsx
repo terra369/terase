@@ -191,7 +191,6 @@ export function AudioProvider({ children }: AudioProviderProps) {
         const view = new DataView(buffer);
         
         // RIFFヘッダ
-        const encoder = new TextEncoder();
         view.setUint8(0, 0x52); view.setUint8(1, 0x49); view.setUint8(2, 0x46); view.setUint8(3, 0x46); // "RIFF"
         view.setUint32(4, fileSize, true);
         view.setUint8(8, 0x57); view.setUint8(9, 0x41); view.setUint8(10, 0x56); view.setUint8(11, 0x45); // "WAVE"
