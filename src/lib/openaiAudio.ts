@@ -38,7 +38,7 @@ function getGlobalAudioElement(): HTMLAudioElement {
     // 基本的なイベントリスナーを設定（一度だけ）
     globalAudioElement.addEventListener('error', (e) => {
       // audio.srcが設定されていない場合のエラーは無視（初期化時のみ）
-      if (!globalAudioElement?.src || globalAudioElement.src === '') {
+      if (!globalAudioElement?.src || globalAudioElement.src === '' || globalAudioElement.src === 'about:blank') {
         return;
       }
       console.error('Global audio element error:', e);
@@ -233,11 +233,11 @@ export async function unlockAudioPlayback(): Promise<boolean> {
       return true;
     } finally {
       // 元の設定を復元
-      if (originalSrc) {
+      if (originalSrc && originalSrc !== '' && originalSrc !== 'about:blank') {
         audio.src = originalSrc;
       } else {
-        // srcが元々空の場合は、空文字に戻す
-        audio.removeAttribute('src');
+        // srcが元々空の場合は、about:blankに設定してエラーを防ぐ
+        audio.src = 'about:blank';
       }
       audio.muted = originalMuted;
       audio.volume = 1.0; // 音量を通常に戻す
