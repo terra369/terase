@@ -43,9 +43,12 @@ export async function streamTTS(text: string, onProgress?: (progress: number) =>
       audio.setAttribute('webkit-playsinline', 'true');
     }
     
-    // 発話状態を更新
-    const { setSpeaking } = useAudioStore.getState();
+    // 発話状態を更新とミュート状態の適用
+    const { setSpeaking, isMuted } = useAudioStore.getState();
     setSpeaking(true);
+    
+    // ミュート状態を適用
+    audio.muted = isMuted;
     
     // プログレス更新用のタイマー
     let progressInterval: NodeJS.Timeout | null = null;

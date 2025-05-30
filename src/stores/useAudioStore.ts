@@ -39,6 +39,12 @@ type AudioStore = {
   speechProgress: SpeechProgress;
   setSpeechProgress: (progress: Partial<SpeechProgress>) => void;
   updateWordIndex: (index: number) => void;
+  
+  // ミュート状態の管理
+  isMuted: boolean;
+  setMuted: (isMuted: boolean) => void;
+  hasUserUnmuted: boolean;  // ユーザーが明示的にミュート解除したか
+  setHasUserUnmuted: (hasUnmuted: boolean) => void;
 };
 
 export const useAudioStore = create<AudioStore>((set) => ({
@@ -93,7 +99,13 @@ export const useAudioStore = create<AudioStore>((set) => ({
       };
     }
     return state;
-  })
+  }),
+  
+  // ミュート状態の管理
+  isMuted: true,  // デフォルトはミュート（ブラウザのautoplayポリシーに準拠）
+  setMuted: (isMuted) => set({ isMuted }),
+  hasUserUnmuted: false,
+  setHasUserUnmuted: (hasUserUnmuted) => set({ hasUserUnmuted })
 }));
 
 // 単語の強調度を計算する補助関数

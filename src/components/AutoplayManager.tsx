@@ -1,8 +1,8 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react';
-import { AudioConsentOverlay } from '@/components/ui/audio-consent-overlay';
+import { UnmuteButton } from '@/components/ui/unmute-button';
+import { useAudioStore } from '@/stores/useAudioStore';
 import { 
-  isAudioContextPermissionGranted, 
   handleFirstUserInteraction,
   ensureAudioContextRunning
 } from '@/lib/audioContext';
@@ -18,34 +18,47 @@ interface AutoplayManagerProps {
 }
 
 export function AutoplayManager({ children }: AutoplayManagerProps) {
-  const [needsConsent, setNeedsConsent] = useState(false);
-
-  // 初回ロード時に同意が必要かチェック
+  const [showUnmuteButton, setShowUnmuteButton] = useState(false);
+  const { isMuted, setMuted, hasUserUnmuted, setHasUserUnmuted, isSpeaking } = useAudioStore();
+  
+  // 音声再生時にミュートボタンを表示
   useEffect(() => {
-    // iOS Safariの検出
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as unknown as { MSStream?: unknown }).MSStream;
-    const hasContextPermission = isAudioContextPermissionGranted();
-    
-    // iOSの場合は常に許諾を表示、それ以外は保存された許諾を確認
-    if (isIOS || !hasContextPermission) {
-      setNeedsConsent(true);
+    if (isSpeaking && isMuted && !hasUserUnmuted) {
+      setShowUnmuteButton(true);
+    } else if (!isSpeaking || !isMuted || hasUserUnmuted) {
+      setShowUnmuteButton(false);
     }
-  }, []);
-
-  // 初回同意処理
-  const handleConsent = useCallback(async () => {
+  }, [isSpeaking, isMuted, hasUserUnmuted]);
+  
+  // ミュート解除処理
+  const handleUnmute = useCallback(async () => {
     try {
-      // AudioContextの初期化とダミー音声再生
-      const success = await handleFirstUserInteraction();
-      if (success) {
-        setNeedsConsent(false);
-      } else {
-        console.error('Failed to initialize audio context on consent');
-      }
+      // 初回のユーザーインタラクション時にAudioContextを初期化
+      await handleFirstUserInteraction();
+      
+      // AudioContextが動いているか確認
+      await ensureAudioContextRunning();
+      
+      // ミュート解除
+      setMuted(false);
+      setHasUserUnmuted(true);
+      setShowUnmuteButton(false);
+      
+      // 現在再生中の音声があれば、ミュートを解除して再開
+      const audioElements = document.querySelectorAll('audio');
+      audioElements.forEach(audio => {
+        if (!audio.paused && audio.muted) {
+          audio.muted = false;
+          // iOSの場合は念のため再度play()を呼ぶ
+          if (isIOS()) {
+            audio.play().catch(console.error);
+          }
+        }
+      });
     } catch (error) {
-      console.error('Error during consent handling:', error);
+      console.error('Error unmuting audio:', error);
     }
-  }, []);
+  }, [setMuted, setHasUserUnmuted]);
 
   // オーディオの自動再生を試行（モバイル対応強化）
   const tryAutoplay = useCallback(async (audio: HTMLAudioElement) => {
@@ -58,6 +71,13 @@ export function AutoplayManager({ children }: AutoplayManagerProps) {
         audio.setAttribute('playsinline', 'true');
         audio.setAttribute('webkit-playsinline', 'true');
         audio.setAttribute('x-webkit-airplay', 'allow');
+      }
+      
+      // ミュート状態に応じて音声を設定
+      if (isMuted) {
+        audio.muted = true;
+      } else {
+        audio.muted = false;
       }
       
       // iOSの場合は専用の再生ロジックを使用
@@ -95,7 +115,7 @@ export function AutoplayManager({ children }: AutoplayManagerProps) {
       console.error('Audio play failed in AutoplayManager:', error);
       throw error;
     }
-  }, []);
+  }, [isMuted]);
 
 
   // グローバルなオーディオ再生要求をリッスン
@@ -113,9 +133,9 @@ export function AutoplayManager({ children }: AutoplayManagerProps) {
 
   return (
     <>
-      {/* 初回同意オーバーレイ */}
-      {needsConsent && (
-        <AudioConsentOverlay onConsent={handleConsent} />
+      {/* ミュート解除ボタン */}
+      {showUnmuteButton && (
+        <UnmuteButton onUnmute={handleUnmute} />
       )}
       
       {children}

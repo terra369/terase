@@ -31,6 +31,14 @@ export function createIOSAudioElement(src?: string): HTMLAudioElement {
   // Disable controls to prevent UI issues
   audio.controls = false;
   
+  // Apply muted state from store if available
+  if (typeof window !== 'undefined') {
+    import('@/stores/useAudioStore').then(({ useAudioStore }) => {
+      const { isMuted } = useAudioStore.getState();
+      audio.muted = isMuted;
+    });
+  }
+  
   if (src) {
     audio.src = src;
   }
