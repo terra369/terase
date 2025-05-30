@@ -47,11 +47,18 @@ export default function MobileConversationInterface() {
         await processConversation(audioBlob);
       } else {
         // 録音開始
+        console.log('Starting recording...');
         startListening();
         await start();
+        console.log('Recording started successfully');
       }
     } catch (error) {
       console.error('Recording error:', error);
+      console.error('Error details:', {
+        name: error instanceof Error ? error.name : 'Unknown',
+        message: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined
+      });
       const errorMessage = error instanceof Error ? error.message : '録音に失敗しました';
       setError(errorMessage);
       stopConversation();

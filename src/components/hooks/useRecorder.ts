@@ -64,6 +64,15 @@ export function useRecorder() {
       await handleFirstUserInteraction()
       await ensureAudioContextRunning()
       
+      // iOS Safari検出
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as unknown as { MSStream?: unknown }).MSStream
+      const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent)
+      
+      // iOSの場合は少し待機してから録音開始
+      if (isIOS && isSafari) {
+        await new Promise(resolve => setTimeout(resolve, 300))
+      }
+      
       const stream = await navigator.mediaDevices.getUserMedia({ 
         audio: {
           channelCount: 1,
@@ -92,6 +101,13 @@ export function useRecorder() {
       
       mediaRec.current.start(1000) // Record in 1-second chunks
       setRec(true)
+      
+      // iOS Safariの場合、録音開始を確認
+      if (isIOS && isSafari) {
+        console.log('Recording started on iOS Safari, MediaRecorder state:', mediaRec.current.state)
+        console.log('Stream active:', stream.active)
+        console.log('Stream tracks:', stream.getTracks().map(t => ({ kind: t.kind, enabled: t.enabled, muted: t.muted })))
+      }
       
     } catch (err) {
       console.error('Recording start error:', err)
