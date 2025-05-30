@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { useConversationStore } from '@/stores/useConversationStore';
 import { useAudioStore } from '@/stores/useAudioStore';
-import { streamTTS } from '@/lib/openaiAudio';
+import { useAudio } from '@/components/AudioProvider';
 
 export function useConversation(diaryId?: number) {
   const {
@@ -15,6 +15,7 @@ export function useConversation(diaryId?: number) {
   } = useConversationStore();
 
   const { setSpeaking } = useAudioStore();
+  const { playTTS } = useAudio();
 
   // Save message to diary_messages table
   const saveMessageToDiary = useCallback(async (diaryId: number, role: 'user' | 'ai', text: string, audioUrl?: string, triggerAI = false) => {
@@ -183,27 +184,22 @@ export function useConversation(diaryId?: number) {
   // AIの応答を音声で再生
   const speakAIResponse = useCallback(async (text: string): Promise<void> => {
     setState('speaking');
-    setSpeaking(true);
     setError(null);
 
     try {
-      await streamTTS(text, () => {
-        // Progress callback removed as we're not tracking it anymore
-      });
-      
+      await playTTS(text);
     } catch (error) {
       console.error('TTS error:', error);
       const errorMessage = error instanceof Error ? error.message : '音声の再生に失敗しました';
       
       // 自動再生がブロックされた場合はエラーとして表示しない
-      if (!(error instanceof Error && error.message.includes('自動再生がブロックされました'))) {
+      if (!(error instanceof Error && error.message.includes('NotAllowedError'))) {
         setError(`音声再生エラー: ${errorMessage}`);
       }
     } finally {
       setState('idle');
-      setSpeaking(false);
     }
-  }, [setState, setSpeaking, setError]);
+  }, [setState, setError, playTTS]);
 
   // 完全な会話フロー：録音 → 転写 → diary保存 → AI応答 → 音声再生
   const processConversation = useCallback(async (audioBlob: Blob) => {

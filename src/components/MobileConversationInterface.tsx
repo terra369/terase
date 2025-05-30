@@ -9,6 +9,7 @@ import { useRecorder } from '@/components/hooks/useRecorder';
 import { useConversation } from '@/components/hooks/useConversation';
 import { useTodayDiary } from '@/components/hooks/useTodayDiary';
 import { useConversationStore } from '@/stores/useConversationStore';
+import { AudioToggle } from '@/components/ui/audio-toggle';
 
 export default function MobileConversationInterface() {
   const { recording, start, stop, error: recorderError } = useRecorder();
@@ -76,7 +77,9 @@ export default function MobileConversationInterface() {
       <div className="bg-[#ecedf3] w-full max-w-[390px] md:max-w-2xl lg:max-w-4xl min-h-screen relative mx-auto">
         {/* App header */}
         <header className="absolute top-[53px] md:top-20 left-0 right-0 flex justify-between items-center px-9 md:px-12">
-          <div className="flex-1"></div> {/* Spacer */}
+          <div className="flex-1 flex justify-start">
+            <AudioToggle />
+          </div>
           <h1 className="font-bold text-[#212121] text-[28px] md:text-4xl lg:text-5xl text-center tracking-wider">
             terase
           </h1>

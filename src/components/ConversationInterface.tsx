@@ -3,12 +3,12 @@ import { useState, useEffect } from 'react';
 import { Canvas } from '@react-three/fiber';
 import Link from 'next/link';
 import { BallBot } from '@/components/BallBot';
-import { AutoplayManager } from '@/components/AutoplayManager';
 import { useRecorder } from '@/components/hooks/useRecorder';
 import { useConversation } from '@/components/hooks/useConversation';
 import { useTodayDiary } from '@/components/hooks/useTodayDiary';
 import { useConversationStore } from '@/stores/useConversationStore';
 import { useAudioStore } from '@/stores/useAudioStore';
+import { AudioToggle } from '@/components/ui/audio-toggle';
 
 export default function ConversationInterface() {
   const { recording, start, stop, error: recorderError } = useRecorder();
@@ -80,8 +80,7 @@ export default function ConversationInterface() {
   const isProcessing = ['transcribing', 'thinking'].includes(state);
 
   return (
-    <AutoplayManager>
-      <div className="relative h-screen overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
+    <div className="relative h-screen overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
       {/* 3D ボット表示 */}
       <div className="absolute inset-0">
         <Canvas
@@ -94,13 +93,14 @@ export default function ConversationInterface() {
       </div>
 
       {/* ナビゲーション */}
-      <div className="absolute top-4 left-4 z-10">
+      <div className="absolute top-4 left-4 z-10 flex gap-2">
         <Link
           href="/calendar"
           className="px-4 py-2 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 transition-colors"
         >
           📅 カレンダー
         </Link>
+        <AudioToggle />
       </div>
 
       {/* 状態表示 */}
@@ -191,7 +191,6 @@ export default function ConversationInterface() {
         </div>
       </div>
 
-      </div>
-    </AutoplayManager>
+    </div>
   );
 }

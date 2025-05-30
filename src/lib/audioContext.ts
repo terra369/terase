@@ -68,9 +68,14 @@ export async function initializeAudioContext(): Promise<AudioContext | null> {
 }
 
 export async function ensureAudioContextRunning(): Promise<boolean> {
+  console.log('[ensureAudioContextRunning] Starting...');
   try {
     const audioContext = await initializeAudioContext()
-    if (!audioContext) return false
+    if (!audioContext) {
+      console.error('[ensureAudioContextRunning] No AudioContext available');
+      return false
+    }
+    console.log('[ensureAudioContextRunning] AudioContext state:', audioContext.state);
     
     // iOSの場合、より積極的にresumeを試みる
     if (audioContext.state === 'suspended') {
@@ -102,10 +107,15 @@ export function getAudioContext(): AudioContext | null {
 
 // 初回ユーザーインタラクション時にAudioContextを初期化し、権限を記録
 export async function handleFirstUserInteraction(): Promise<boolean> {
+  console.log('[handleFirstUserInteraction] Starting...');
   try {
     // AudioContextを初期化
     const audioContext = await initializeAudioContext()
-    if (!audioContext) return false
+    console.log('[handleFirstUserInteraction] AudioContext initialized:', audioContext?.state);
+    if (!audioContext) {
+      console.error('[handleFirstUserInteraction] Failed to initialize AudioContext');
+      return false
+    }
     
     // iOS Safariの検出
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as unknown as { MSStream?: unknown }).MSStream
@@ -168,10 +178,11 @@ export async function handleFirstUserInteraction(): Promise<boolean> {
     
     // 成功したら権限を記録
     setAudioContextPermissionGranted()
+    console.log('[handleFirstUserInteraction] Permission granted and stored');
     
     return true
   } catch (error) {
-    console.error('Failed to handle first user interaction:', error)
+    console.error('[handleFirstUserInteraction] Failed:', error)
     return false
   }
 }
