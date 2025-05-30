@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { handleFirstUserInteraction, ensureAudioContextRunning } from '@/lib/audioContext'
 
 // Get the best supported MIME type for recording
 function getSupportedMimeType(): string {
@@ -58,6 +59,10 @@ export function useRecorder() {
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
         throw new Error('getUserMedia is not supported in this browser')
       }
+      
+      // 初回録音時にAudioContextを初期化（ユーザーインタラクション時）
+      await handleFirstUserInteraction()
+      await ensureAudioContextRunning()
       
       const stream = await navigator.mediaDevices.getUserMedia({ 
         audio: {
