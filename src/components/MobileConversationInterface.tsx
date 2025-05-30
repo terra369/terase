@@ -35,11 +35,19 @@ export default function MobileConversationInterface() {
     if (!hasConsented) {
       setShowConsent(true);
     } else {
-      // If already consented, initialize audio immediately
-      handleFirstUserInteraction();
-      unlockAudioPlayback();
-      setMuted(false);
-      setHasUserUnmuted(true);
+      // If already consented, initialize audio immediately (with proper error handling)
+      const initAudio = async () => {
+        try {
+          await handleFirstUserInteraction();
+          await unlockAudioPlayback();
+          setMuted(false);
+          setHasUserUnmuted(true);
+        } catch (error) {
+          console.warn('Auto-initialization of audio failed (expected on page load):', error);
+          // Don't show error to user - they can re-initialize by interacting
+        }
+      };
+      initAudio();
     }
   }, [setMuted, setHasUserUnmuted]);
   

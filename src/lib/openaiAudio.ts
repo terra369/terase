@@ -41,7 +41,10 @@ function getGlobalAudioElement(): HTMLAudioElement {
       if (!globalAudioElement?.src || globalAudioElement.src === '' || globalAudioElement.src === 'about:blank') {
         return;
       }
-      console.error('Global audio element error:', e);
+      // エラーの詳細情報を取得
+      const error = globalAudioElement.error;
+      const errorDetails = error ? `${error.code}: ${error.message}` : 'Unknown error';
+      console.error('Global audio element error:', errorDetails, e);
       const { setSpeaking } = useAudioStore.getState();
       setSpeaking(false);
     });
@@ -129,6 +132,11 @@ export async function streamTTS(text: string, onProgress?: (progress: number) =>
     // 新しい音声ソースを設定
     audio.src = currentBlobUrl;
     
+    // iOSの場合はpreloadを'auto'に設定
+    if (isIOS()) {
+      audio.preload = 'auto';
+    }
+    
     // 再生開始（モバイル対応のフォールバック付き）
     try {
       // AudioContextが正常に動作しているか確認
@@ -136,8 +144,15 @@ export async function streamTTS(text: string, onProgress?: (progress: number) =>
       
       if (isIOS()) {
         // iOS専用の再生処理
-        await preloadAudioForIOS(audio);
-        await playAudioWithIOSFallback(audio);
+        try {
+          await preloadAudioForIOS(audio);
+          await playAudioWithIOSFallback(audio);
+        } catch (iosError) {
+          console.warn('iOS audio playback failed, falling back to AutoplayManager:', iosError);
+          // フォールバックとしてAutoplayManagerを使用
+          const event = new CustomEvent('audioPlayRequest', { detail: audio });
+          window.dispatchEvent(event);
+        }
       } else {
         // iOS以外の通常処理
         audio.load();
@@ -215,32 +230,68 @@ export async function unlockAudioPlayback(): Promise<boolean> {
     // 現在のソースを保存
     const originalSrc = audio.src;
     const originalMuted = audio.muted;
-    
-    // 無音音声で許可を取得
-    audio.src = silentBlobUrl;
-    audio.muted = false;
-    audio.volume = 0.01; // ほぼ聞こえない音量
+    const originalVolume = audio.volume;
     
     try {
+      // 無音音声で許可を取得
+      audio.src = silentBlobUrl;
+      audio.muted = false;
+      audio.volume = 0.01; // ほぼ聞こえない音量
+      
+      // iOSの場合は load() を明示的に呼ぶ
+      if (isIOS()) {
+        audio.load();
+        // load完了を待つ
+        await new Promise<void>((resolve, reject) => {
+          const timeout = setTimeout(() => {
+            reject(new Error('Audio load timeout during unlock'));
+          }, 3000);
+          
+          const handleCanPlay = () => {
+            clearTimeout(timeout);
+            audio.removeEventListener('canplaythrough', handleCanPlay);
+            audio.removeEventListener('error', handleError);
+            resolve();
+          };
+          
+          const handleError = () => {
+            clearTimeout(timeout);
+            audio.removeEventListener('canplaythrough', handleCanPlay);
+            audio.removeEventListener('error', handleError);
+            reject(new Error('Audio load error during unlock'));
+          };
+          
+          audio.addEventListener('canplaythrough', handleCanPlay, { once: true });
+          audio.addEventListener('error', handleError, { once: true });
+        });
+      }
+      
       await audio.play();
+      
       // 短時間再生後停止
-      setTimeout(() => {
-        audio.pause();
-        audio.currentTime = 0;
-      }, 100);
+      await new Promise(resolve => setTimeout(resolve, 100));
+      audio.pause();
+      audio.currentTime = 0;
       
       console.log('Audio playback unlocked successfully');
       return true;
+    } catch (playError) {
+      console.warn('Audio unlock play failed:', playError);
+      // プレイが失敗してもtrue を返す（一度試行したことが重要）
+      return true;
     } finally {
+      // 元の設定を復元する前に少し待つ（iOS対策）
+      await new Promise(resolve => setTimeout(resolve, 50));
+      
       // 元の設定を復元
       if (originalSrc && originalSrc !== '' && originalSrc !== 'about:blank') {
         audio.src = originalSrc;
       } else {
-        // srcが元々空の場合は、about:blankに設定してエラーを防ぐ
-        audio.src = 'about:blank';
+        // srcが元々空の場合は、空のままにする（about:blankは設定しない）
+        audio.removeAttribute('src');
       }
       audio.muted = originalMuted;
-      audio.volume = 1.0; // 音量を通常に戻す
+      audio.volume = originalVolume || 1.0;
     }
     
   } catch (error) {
