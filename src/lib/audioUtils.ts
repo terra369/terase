@@ -48,6 +48,11 @@ export function createIOSAudioElement(src?: string): HTMLAudioElement {
 
 // Preload audio with iOS-specific handling
 export async function preloadAudioForIOS(audio: HTMLAudioElement): Promise<void> {
+  // Ensure src is valid before attempting to preload
+  if (!audio.src || audio.src === '' || audio.src === 'about:blank') {
+    throw new Error('Cannot preload audio without valid src');
+  }
+  
   return new Promise((resolve, reject) => {
     const timeout = setTimeout(() => {
       reject(new Error('Audio preload timeout'));

@@ -71,10 +71,15 @@ export function AutoplayManager({ children }: AutoplayManagerProps) {
       // iOSの場合は専用の再生ロジックを使用
       if (isIOS()) {
         // iOS専用のプリロードと再生処理
-        if (audio.readyState < 3) {
-          await preloadAudioForIOS(audio);
+        // srcが有効な場合のみプリロードを試行
+        if (audio.src && audio.src !== '' && audio.src !== 'about:blank') {
+          if (audio.readyState < 3) {
+            await preloadAudioForIOS(audio);
+          }
+          await playAudioWithIOSFallback(audio, 3);
+        } else {
+          throw new Error('Invalid audio source for iOS playback');
         }
-        await playAudioWithIOSFallback(audio, 3);
       } else {
         // iOS以外の通常処理
         if (audio.readyState < 4) {
