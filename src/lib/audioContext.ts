@@ -120,7 +120,7 @@ export async function handleFirstUserInteraction(): Promise<boolean> {
     
     // iOS Safariでは少し長めの再生時間と音量を設定
     const duration = isIOS && isSafari ? 0.25 : 0.1
-    const volume = isIOS && isSafari ? 0.01 : 0.001
+    const volume = 0.00001 // ほぼ聞こえない音量に設定
     
     gainNode.gain.setValueAtTime(volume, audioContext.currentTime)
     oscillator.frequency.setValueAtTime(440, audioContext.currentTime)
@@ -133,7 +133,7 @@ export async function handleFirstUserInteraction(): Promise<boolean> {
       silentAudio.src = 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQQAAAAAAAA='
       silentAudio.setAttribute('playsinline', 'true')
       silentAudio.setAttribute('webkit-playsinline', 'true')
-      silentAudio.volume = 0.01
+      silentAudio.volume = 0.00001 // ほぼ聞こえない音量に設定
       try {
         await silentAudio.play()
         logAudioDebug({
