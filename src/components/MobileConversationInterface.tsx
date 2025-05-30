@@ -1,5 +1,5 @@
 'use client'
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { Button } from "@/components/ui/button";
 import { Calendar, Mic } from "lucide-react";
@@ -9,6 +9,10 @@ import { useRecorder } from '@/components/hooks/useRecorder';
 import { useConversation } from '@/components/hooks/useConversation';
 import { useTodayDiary } from '@/components/hooks/useTodayDiary';
 import { useConversationStore } from '@/stores/useConversationStore';
+import { AudioConsentOverlay } from '@/components/ui/audio-consent-overlay';
+import { useAudioStore } from '@/stores/useAudioStore';
+import { handleFirstUserInteraction } from '@/lib/audioContext';
+import { unlockAudioPlayback } from '@/lib/openaiAudio';
 
 export default function MobileConversationInterface() {
   const { recording, start, stop, error: recorderError } = useRecorder();
@@ -20,11 +24,51 @@ export default function MobileConversationInterface() {
     error,
     setError
   } = useConversationStore();
+  const { setMuted, setHasUserUnmuted } = useAudioStore();
+  
+  // Check if user has already consented to audio
+  const [showConsent, setShowConsent] = useState(false);
+  
+  useEffect(() => {
+    // Check localStorage for audio consent
+    const hasConsented = localStorage.getItem('teraseAudioConsent');
+    if (!hasConsented) {
+      setShowConsent(true);
+    } else {
+      // If already consented, initialize audio immediately
+      handleFirstUserInteraction();
+      unlockAudioPlayback();
+      setMuted(false);
+      setHasUserUnmuted(true);
+    }
+  }, [setMuted, setHasUserUnmuted]);
   
   // Combine recorder errors with conversation errors
   const displayError = recorderError || error;
 
   const scrollRef = useRef<HTMLDivElement>(null);
+  
+  // Handle audio consent
+  const handleAudioConsent = async () => {
+    try {
+      // Initialize audio context and unlock playback
+      await handleFirstUserInteraction();
+      await unlockAudioPlayback();
+      
+      // Update audio store state
+      setMuted(false);
+      setHasUserUnmuted(true);
+      
+      // Save consent to localStorage
+      localStorage.setItem('teraseAudioConsent', 'true');
+      
+      // Hide consent overlay
+      setShowConsent(false);
+    } catch (error) {
+      console.error('Failed to initialize audio:', error);
+      setError('音声の初期化に失敗しました');
+    }
+  };
 
   // 録音状態をストアと同期
   React.useEffect(() => {
@@ -72,7 +116,13 @@ export default function MobileConversationInterface() {
 
 
   return (
-    <main className="bg-[#ecedf3] flex flex-row justify-center w-full min-h-screen">
+    <>
+      {/* Audio consent overlay */}
+      {showConsent && (
+        <AudioConsentOverlay onConsent={handleAudioConsent} />
+      )}
+      
+      <main className="bg-[#ecedf3] flex flex-row justify-center w-full min-h-screen">
       <div className="bg-[#ecedf3] w-full max-w-[390px] md:max-w-2xl lg:max-w-4xl min-h-screen relative mx-auto">
         {/* App header */}
         <header className="absolute top-[53px] md:top-20 left-0 right-0 flex justify-between items-center px-9 md:px-12">
@@ -166,5 +216,6 @@ export default function MobileConversationInterface() {
         )}
       </div>
     </main>
+    </>
   );
 }

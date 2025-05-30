@@ -1,6 +1,8 @@
 /**
  * クライアントサイドからサーバーサイドAPIを呼び出す安全な実装
  * OpenAIのAPIキーをブラウザに露出させないセキュアな方法
+ * 
+ * シングルトンAudio要素を使用してモバイルブラウザの自動再生制限を回避
  */
 
 import { useAudioStore } from '@/stores/useAudioStore';
@@ -11,6 +13,52 @@ import {
   playAudioWithIOSFallback,
   preloadAudioForIOS 
 } from '@/lib/audioUtils';
+
+// シングルトンAudio要素（アプリ全体で再利用）
+let globalAudioElement: HTMLAudioElement | null = null;
+let currentBlobUrl: string | null = null;
+
+/**
+ * グローバルなAudio要素を取得・初期化
+ * 初回呼び出し時にAudio要素を作成し、以降は同じ要素を再利用
+ */
+function getGlobalAudioElement(): HTMLAudioElement {
+  if (!globalAudioElement) {
+    // iOS判定に基づいて適切なAudio要素を作成
+    globalAudioElement = isIOS() 
+      ? createIOSAudioElement() // iOS専用の設定でAudio要素作成（src未設定）
+      : new Audio();
+    
+    // iOS以外でも念のため基本属性を設定
+    if (!isIOS()) {
+      globalAudioElement.setAttribute('playsinline', 'true');
+      globalAudioElement.setAttribute('webkit-playsinline', 'true');
+    }
+    
+    // 基本的なイベントリスナーを設定（一度だけ）
+    globalAudioElement.addEventListener('error', (e) => {
+      // audio.srcが設定されていない場合のエラーは無視（初期化時のみ）
+      if (!globalAudioElement?.src || globalAudioElement.src === '') {
+        return;
+      }
+      console.error('Global audio element error:', e);
+      const { setSpeaking } = useAudioStore.getState();
+      setSpeaking(false);
+    });
+  }
+  
+  return globalAudioElement;
+}
+
+/**
+ * 前のBlob URLをクリーンアップ
+ */
+function cleanupBlobUrl() {
+  if (currentBlobUrl) {
+    URL.revokeObjectURL(currentBlobUrl);
+    currentBlobUrl = null;
+  }
+}
 
 export async function streamTTS(text: string, onProgress?: (progress: number) => void) {
   try {
@@ -32,16 +80,18 @@ export async function streamTTS(text: string, onProgress?: (progress: number) =>
     const arrayBuffer = await response.arrayBuffer();
     const blob = new Blob([arrayBuffer], { type: 'audio/mpeg' });
     
-    // Audio要素を作成して再生
-    const audio = isIOS() 
-      ? createIOSAudioElement(URL.createObjectURL(blob))
-      : new Audio(URL.createObjectURL(blob));
+    // 前のBlob URLをクリーンアップ
+    cleanupBlobUrl();
     
-    // iOS以外でも念のため属性を設定
-    if (!isIOS()) {
-      audio.setAttribute('playsinline', 'true');
-      audio.setAttribute('webkit-playsinline', 'true');
-    }
+    // 新しいBlob URLを作成
+    currentBlobUrl = URL.createObjectURL(blob);
+    
+    // シングルトンAudio要素を取得
+    const audio = getGlobalAudioElement();
+    
+    // 前の再生を停止（重複再生防止）
+    audio.pause();
+    audio.currentTime = 0;
     
     // 発話状態を更新とミュート状態の適用
     const { setSpeaking, isMuted } = useAudioStore.getState();
@@ -53,7 +103,11 @@ export async function streamTTS(text: string, onProgress?: (progress: number) =>
     // プログレス更新用のタイマー
     let progressInterval: NodeJS.Timeout | null = null;
     
-    // 再生のイベントリスナー
+    // 既存のイベントリスナーをクリア（重複防止）
+    audio.onloadedmetadata = null;
+    audio.onended = null;
+    
+    // 再生のイベントリスナーを設定
     audio.onloadedmetadata = () => {
       if (onProgress && audio.duration) {
         progressInterval = setInterval(() => {
@@ -68,8 +122,12 @@ export async function streamTTS(text: string, onProgress?: (progress: number) =>
       if (progressInterval) {
         clearInterval(progressInterval);
         onProgress?.(100);
+        progressInterval = null;
       }
     };
+    
+    // 新しい音声ソースを設定
+    audio.src = currentBlobUrl;
     
     // 再生開始（モバイル対応のフォールバック付き）
     try {
@@ -88,15 +146,22 @@ export async function streamTTS(text: string, onProgress?: (progress: number) =>
             reject(new Error('Audio load timeout'));
           }, 5000);
           
-          audio.addEventListener('canplaythrough', () => {
+          const handleCanPlay = () => {
             clearTimeout(timeout);
+            audio.removeEventListener('canplaythrough', handleCanPlay);
+            audio.removeEventListener('error', handleError);
             resolve(undefined);
-          }, { once: true });
+          };
           
-          audio.addEventListener('error', (e) => {
+          const handleError = (e: ErrorEvent) => {
             clearTimeout(timeout);
+            audio.removeEventListener('canplaythrough', handleCanPlay);
+            audio.removeEventListener('error', handleError);
             reject(e);
-          }, { once: true });
+          };
+          
+          audio.addEventListener('canplaythrough', handleCanPlay, { once: true });
+          audio.addEventListener('error', handleError, { once: true });
         });
         
         await audio.play();
@@ -115,9 +180,11 @@ export async function streamTTS(text: string, onProgress?: (progress: number) =>
       blob: () => blob,
       stop: () => {
         audio.pause();
+        audio.currentTime = 0;
         setSpeaking(false);
         if (progressInterval) {
           clearInterval(progressInterval);
+          progressInterval = null;
         }
       }
     };
@@ -128,4 +195,68 @@ export async function streamTTS(text: string, onProgress?: (progress: number) =>
     setSpeaking(false);
     throw error;
   }
+}
+
+/**
+ * ユーザーの操作で音声再生を「アンロック」する
+ * 初回のユーザータップ時に呼ばれ、以降の自動再生を可能にする
+ */
+export async function unlockAudioPlayback(): Promise<boolean> {
+  try {
+    // グローバルオーディオ要素を取得（初期化される）
+    const audio = getGlobalAudioElement();
+    
+    // AudioContextの許可も取得
+    await ensureAudioContextRunning();
+    
+    // 音声要素の許可を得るため、無音を短時間再生
+    const silentBlobUrl = 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQQAAAAAAAA=';
+    
+    // 現在のソースを保存
+    const originalSrc = audio.src;
+    const originalMuted = audio.muted;
+    
+    // 無音音声で許可を取得
+    audio.src = silentBlobUrl;
+    audio.muted = false;
+    audio.volume = 0.01; // ほぼ聞こえない音量
+    
+    try {
+      await audio.play();
+      // 短時間再生後停止
+      setTimeout(() => {
+        audio.pause();
+        audio.currentTime = 0;
+      }, 100);
+      
+      console.log('Audio playback unlocked successfully');
+      return true;
+    } finally {
+      // 元の設定を復元
+      if (originalSrc) {
+        audio.src = originalSrc;
+      } else {
+        // srcが元々空の場合は、空文字に戻す
+        audio.removeAttribute('src');
+      }
+      audio.muted = originalMuted;
+      audio.volume = 1.0; // 音量を通常に戻す
+    }
+    
+  } catch (error) {
+    console.error('Failed to unlock audio playback:', error);
+    return false;
+  }
+}
+
+/**
+ * グローバルAudio要素のクリーンアップ（必要に応じて）
+ */
+export function cleanupGlobalAudio() {
+  if (globalAudioElement) {
+    globalAudioElement.pause();
+    globalAudioElement.src = '';
+    globalAudioElement = null;
+  }
+  cleanupBlobUrl();
 }
