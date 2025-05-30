@@ -6,8 +6,13 @@ import {
   ensureAudioContextRunning,
   isAudioContextPermissionGranted
 } from '@/lib/audioContext';
-import { isIOS } from '@/lib/audioUtils';
+import { isIOS, createSilentAudioBlob } from '@/lib/audioUtils';
 import { UnmuteButton } from '@/components/ui/unmute-button';
+import { logger, handleAudioError } from '@/lib/utils';
+
+interface ExtendedHTMLAudioElement extends HTMLAudioElement {
+  playsInline?: boolean;
+}
 
 interface AudioProviderContext {
   playTTS: (text: string) => Promise<void>;
@@ -36,15 +41,8 @@ export function AudioProvider({ children }: AudioProviderProps) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const pendingBlobRef = useRef<Blob | null>(null);
   const [needsInteraction, setNeedsInteraction] = useState(() => {
-    // デバッグのため、localStorageをクリア
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('terase_audio_context_permission_granted');
-    }
-    
     const hasPermission = isAudioContextPermissionGranted();
-    console.log('[AudioProvider] Initial permission check:', hasPermission);
-    console.log('[AudioProvider] Force showing overlay for debugging');
-    return true; // 常にオーバーレイを表示
+    return !hasPermission;
   });
   const [showUnmuteButton, setShowUnmuteButton] = useState(false);
   const [audioEnabled, setAudioEnabled] = useState(true);
@@ -59,25 +57,20 @@ export function AudioProvider({ children }: AudioProviderProps) {
   } = useAudioStore();
   
   useEffect(() => {
-    console.log('=== AudioProvider State Update ===');
-    console.log('needsInteraction:', needsInteraction);
-    console.log('hasUserUnmuted:', hasUserUnmuted);
-    console.log('isMuted:', isMuted);
-    console.log('audioEnabled:', audioEnabled);
-    console.log('showUnmuteButton:', showUnmuteButton);
-    console.log('Should show overlay:', needsInteraction && !hasUserUnmuted);
-    
-    // localStorageの内容も確認
-    if (typeof window !== 'undefined') {
-      console.log('localStorage permission:', localStorage.getItem('terase_audio_context_permission_granted'));
-    }
+    logger.log('=== AudioProvider State Update ===');
+    logger.log('needsInteraction:', needsInteraction);
+    logger.log('hasUserUnmuted:', hasUserUnmuted);
+    logger.log('isMuted:', isMuted);
+    logger.log('audioEnabled:', audioEnabled);
+    logger.log('showUnmuteButton:', showUnmuteButton);
+    logger.log('Should show overlay:', needsInteraction && !hasUserUnmuted);
   }, [needsInteraction, hasUserUnmuted, isMuted, audioEnabled, showUnmuteButton]);
 
   useEffect(() => {
     if (!audioRef.current) {
       const audio = new Audio();
       if ('playsInline' in audio) {
-        (audio as HTMLMediaElement & { playsInline?: boolean }).playsInline = true;
+        (audio as ExtendedHTMLAudioElement).playsInline = true;
       }
       audio.setAttribute('playsinline', 'true');
       audio.setAttribute('webkit-playsinline', 'true');
@@ -88,7 +81,7 @@ export function AudioProvider({ children }: AudioProviderProps) {
       audio.onplay = () => setSpeaking(true);
       audio.onended = () => setSpeaking(false);
       audio.onerror = (e) => {
-        console.error('Audio error:', e);
+        handleAudioError(e instanceof Error ? e : new Error('Audio element error'), 'AudioProvider');
         setSpeaking(false);
       };
       
@@ -104,16 +97,16 @@ export function AudioProvider({ children }: AudioProviderProps) {
   }, [setSpeaking]);
 
   useEffect(() => {
-    console.log('[AudioProvider] Mute state effect:', { isMuted, hasUserUnmuted });
+    logger.log('[AudioProvider] Mute state effect:', { isMuted, hasUserUnmuted });
     if (audioRef.current) {
       audioRef.current.muted = isMuted && !hasUserUnmuted;
-      console.log('[AudioProvider] Audio element muted state set to:', audioRef.current.muted);
+      logger.log('[AudioProvider] Audio element muted state set to:', audioRef.current.muted);
     }
   }, [isMuted, hasUserUnmuted]);
 
   useEffect(() => {
     const shouldShow = isSpeaking && isMuted && !hasUserUnmuted;
-    console.log('[AudioProvider] Unmute button visibility:', { isSpeaking, isMuted, hasUserUnmuted, shouldShow });
+    logger.log('[AudioProvider] Unmute button visibility:', { isSpeaking, isMuted, hasUserUnmuted, shouldShow });
     setShowUnmuteButton(shouldShow);
   }, [isSpeaking, isMuted, hasUserUnmuted]);
 
@@ -150,83 +143,44 @@ export function AudioProvider({ children }: AudioProviderProps) {
       await audio.play();
       
     } catch (error) {
-      console.error('Audio play failed:', error);
+      const audioError = handleAudioError(error instanceof Error ? error : new Error(String(error)), 'playAudioBlobInternal');
       
-      if (error instanceof Error && error.name === 'NotAllowedError') {
+      if (audioError.type === 'permission') {
         setNeedsInteraction(true);
         pendingBlobRef.current = blob;
         setShowUnmuteButton(true);
       }
       
-      throw error;
+      throw audioError;
     }
   }, [audioEnabled]);
 
   const handleUnlock = useCallback(async () => {
-    console.log('handleUnlock called');
+    logger.log('handleUnlock called');
     try {
       const interactionResult = await handleFirstUserInteraction();
-      console.log('handleFirstUserInteraction result:', interactionResult);
+      logger.log('handleFirstUserInteraction result:', interactionResult);
       
       const contextRunning = await ensureAudioContextRunning();
-      console.log('ensureAudioContextRunning result:', contextRunning);
+      logger.log('ensureAudioContextRunning result:', contextRunning);
       
       if (audioRef.current) {
-        console.log('audioRef.current exists, attempting to unlock');
+        logger.log('audioRef.current exists, attempting to unlock');
         audioRef.current.muted = false;
         
-        // 正しいWAVファイルヘッダを作成
-        const sampleRate = 44100;
-        const numChannels = 1;
-        const bitsPerSample = 16;
-        const duration = 0.1; // 0.1秒
-        const numSamples = Math.floor(sampleRate * duration);
-        const bytesPerSample = bitsPerSample / 8;
-        const blockAlign = numChannels * bytesPerSample;
-        const byteRate = sampleRate * blockAlign;
-        const dataSize = numSamples * blockAlign;
-        const fileSize = 36 + dataSize;
-        
-        const buffer = new ArrayBuffer(44 + dataSize);
-        const view = new DataView(buffer);
-        
-        // RIFFヘッダ
-        view.setUint8(0, 0x52); view.setUint8(1, 0x49); view.setUint8(2, 0x46); view.setUint8(3, 0x46); // "RIFF"
-        view.setUint32(4, fileSize, true);
-        view.setUint8(8, 0x57); view.setUint8(9, 0x41); view.setUint8(10, 0x56); view.setUint8(11, 0x45); // "WAVE"
-        
-        // fmtチャンク
-        view.setUint8(12, 0x66); view.setUint8(13, 0x6D); view.setUint8(14, 0x74); view.setUint8(15, 0x20); // "fmt "
-        view.setUint32(16, 16, true); // fmtチャンクのサイズ
-        view.setUint16(20, 1, true); // PCM
-        view.setUint16(22, numChannels, true);
-        view.setUint32(24, sampleRate, true);
-        view.setUint32(28, byteRate, true);
-        view.setUint16(32, blockAlign, true);
-        view.setUint16(34, bitsPerSample, true);
-        
-        // dataチャンク
-        view.setUint8(36, 0x64); view.setUint8(37, 0x61); view.setUint8(38, 0x74); view.setUint8(39, 0x61); // "data"
-        view.setUint32(40, dataSize, true);
-        
-        // 無音データ（すべて0）
-        for (let i = 44; i < buffer.byteLength; i++) {
-          view.setUint8(i, 0);
-        }
-        
-        const silentBlob = new Blob([buffer], { type: 'audio/wav' });
+        const silentBlob = createSilentAudioBlob();
         audioRef.current.src = URL.createObjectURL(silentBlob);
         
         try {
           await audioRef.current.play();
           audioRef.current.pause();
-          console.log('Silent audio played successfully');
+          logger.log('Silent audio played successfully');
         } catch (e) {
-          console.warn('Silent audio play failed:', e);
+          logger.warn('Silent audio play failed:', e);
         }
       }
       
-      console.log('[handleUnlock] Before state updates:', {
+      logger.log('[handleUnlock] Before state updates:', {
         needsInteraction,
         isMuted,
         hasUserUnmuted
@@ -236,19 +190,17 @@ export function AudioProvider({ children }: AudioProviderProps) {
       setMuted(false);
       setHasUserUnmuted(true);
       
-      console.log('[handleUnlock] State updates called - states will update on next render');
-      
-      // ネットワークタブでAPIコールを確認するためのダミーログ
-      console.log('[handleUnlock] Process completed successfully');
+      logger.log('[handleUnlock] State updates called - states will update on next render');
+      logger.log('[handleUnlock] Process completed successfully');
       
       if (pendingBlobRef.current) {
-        console.log('Playing pending audio blob');
+        logger.log('Playing pending audio blob');
         const blob = pendingBlobRef.current;
         pendingBlobRef.current = null;
         await playAudioBlobInternal(blob);
       }
     } catch (error) {
-      console.error('Failed to unlock audio:', error);
+      handleAudioError(error instanceof Error ? error : new Error(String(error)), 'handleUnlock');
     }
   }, [setMuted, setHasUserUnmuted, playAudioBlobInternal]);
 
@@ -282,9 +234,9 @@ export function AudioProvider({ children }: AudioProviderProps) {
       await playAudioBlob(blob);
       
     } catch (error) {
-      console.error('TTS error:', error);
+      const audioError = handleAudioError(error instanceof Error ? error : new Error(String(error)), 'playTTS');
       setSpeaking(false);
-      throw error;
+      throw audioError;
     }
   }, [audioEnabled, playAudioBlob, setSpeaking]);
 
@@ -329,20 +281,20 @@ export function AudioProvider({ children }: AudioProviderProps) {
               className="w-full bg-[#ec6a52] hover:bg-[#e55a40] active:bg-[#d94a30] text-white rounded-lg px-4 py-3 transition-colors cursor-pointer font-medium text-base"
               style={{ pointerEvents: 'auto', touchAction: 'manipulation' }}
               onClick={() => {
-                console.log('=== Button Click Detected ===');
-                console.log('needsInteraction:', needsInteraction);
-                console.log('hasUserUnmuted:', hasUserUnmuted);
-                console.log('isMuted:', isMuted);
-                console.log('audioEnabled:', audioEnabled);
-                console.log('Calling handleUnlock...');
+                logger.log('=== Button Click Detected ===');
+                logger.log('needsInteraction:', needsInteraction);
+                logger.log('hasUserUnmuted:', hasUserUnmuted);
+                logger.log('isMuted:', isMuted);
+                logger.log('audioEnabled:', audioEnabled);
+                logger.log('Calling handleUnlock...');
                 handleUnlock();
               }}
               onMouseDown={(e) => {
-                console.log('=== Mouse Down Event ===');
+                logger.log('=== Mouse Down Event ===');
                 e.preventDefault();
               }}
               onTouchStart={(e) => {
-                console.log('=== Touch Start Event ===');
+                logger.log('=== Touch Start Event ===');
                 e.preventDefault();
               }}
               type="button"

@@ -147,6 +147,49 @@ export async function playAudioWithIOSFallback(
 // Silent audio data URL for unlock
 export const SILENT_AUDIO_DATA_URL = 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQQAAAAAAAA=';
 
+// Create a silent audio blob (WAV format)
+export function createSilentAudioBlob(): Blob {
+  const sampleRate = 44100;
+  const numChannels = 1;
+  const bitsPerSample = 16;
+  const duration = 0.1;
+  const numSamples = Math.floor(sampleRate * duration);
+  const bytesPerSample = bitsPerSample / 8;
+  const blockAlign = numChannels * bytesPerSample;
+  const byteRate = sampleRate * blockAlign;
+  const dataSize = numSamples * blockAlign;
+  const fileSize = 36 + dataSize;
+  
+  const buffer = new ArrayBuffer(44 + dataSize);
+  const view = new DataView(buffer);
+  
+  // RIFF header
+  view.setUint8(0, 0x52); view.setUint8(1, 0x49); view.setUint8(2, 0x46); view.setUint8(3, 0x46); // "RIFF"
+  view.setUint32(4, fileSize, true);
+  view.setUint8(8, 0x57); view.setUint8(9, 0x41); view.setUint8(10, 0x56); view.setUint8(11, 0x45); // "WAVE"
+  
+  // fmt chunk
+  view.setUint8(12, 0x66); view.setUint8(13, 0x6D); view.setUint8(14, 0x74); view.setUint8(15, 0x20); // "fmt "
+  view.setUint32(16, 16, true);
+  view.setUint16(20, 1, true); // PCM
+  view.setUint16(22, numChannels, true);
+  view.setUint32(24, sampleRate, true);
+  view.setUint32(28, byteRate, true);
+  view.setUint16(32, blockAlign, true);
+  view.setUint16(34, bitsPerSample, true);
+  
+  // data chunk
+  view.setUint8(36, 0x64); view.setUint8(37, 0x61); view.setUint8(38, 0x74); view.setUint8(39, 0x61); // "data"
+  view.setUint32(40, dataSize, true);
+  
+  // Silent data (all zeros)
+  for (let i = 44; i < buffer.byteLength; i++) {
+    view.setUint8(i, 0);
+  }
+  
+  return new Blob([buffer], { type: 'audio/wav' });
+}
+
 // Unlock audio playback on iOS
 export async function unlockIOSAudio(): Promise<boolean> {
   try {

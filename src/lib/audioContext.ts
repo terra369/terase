@@ -1,6 +1,7 @@
 'use client'
 
 import { logAudioDebug } from './audioDebug'
+import { SILENT_AUDIO_DATA_URL } from './audioUtils'
 
 const AUDIO_CONTEXT_PERMISSION_KEY = 'terase_audio_context_permission_granted'
 
@@ -140,7 +141,7 @@ export async function handleFirstUserInteraction(): Promise<boolean> {
     // iOSの場合、ダミーのAudio要素も再生してより確実にする
     if (isIOS) {
       const silentAudio = new Audio()
-      silentAudio.src = 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQQAAAAAAAA='
+      silentAudio.src = SILENT_AUDIO_DATA_URL
       silentAudio.setAttribute('playsinline', 'true')
       silentAudio.setAttribute('webkit-playsinline', 'true')
       silentAudio.volume = 0.00001 // ほぼ聞こえない音量に設定
