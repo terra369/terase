@@ -2,21 +2,8 @@
 
 import { logAudioDebug } from './audioDebug'
 
-const AUDIO_CONTEXT_PERMISSION_KEY = 'terase_audio_context_permission_granted'
-
 // グローバルなAudioContextインスタンス
 let globalAudioContext: AudioContext | null = null
-
-export function isAudioContextPermissionGranted(): boolean {
-  if (typeof window === 'undefined') return false
-  return localStorage.getItem(AUDIO_CONTEXT_PERMISSION_KEY) === 'true'
-}
-
-export function setAudioContextPermissionGranted() {
-  if (typeof window !== 'undefined') {
-    localStorage.setItem(AUDIO_CONTEXT_PERMISSION_KEY, 'true')
-  }
-}
 
 export async function initializeAudioContext(): Promise<AudioContext | null> {
   if (typeof window === 'undefined') return null
@@ -127,26 +114,6 @@ export async function handleFirstUserInteraction(): Promise<boolean> {
     oscillator.start(audioContext.currentTime)
     oscillator.stop(audioContext.currentTime + duration)
     
-    // iOSの場合、ダミーのAudio要素も再生してより確実にする
-    if (isIOS) {
-      const silentAudio = new Audio()
-      silentAudio.src = 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQQAAAAAAAA='
-      silentAudio.setAttribute('playsinline', 'true')
-      silentAudio.setAttribute('webkit-playsinline', 'true')
-      silentAudio.volume = 0.00001 // ほぼ聞こえない音量に設定
-      try {
-        await silentAudio.play()
-        logAudioDebug({
-          error: 'Silent audio played successfully on iOS'
-        })
-      } catch (e) {
-        console.warn('Silent audio play failed:', e)
-        logAudioDebug({
-          error: `Silent audio play failed on iOS: ${e}`
-        })
-      }
-    }
-    
     // iOS Safariでは長めに待機
     const waitTime = isIOS && isSafari ? 200 : 50
     await new Promise(resolve => setTimeout(resolve, waitTime))
@@ -165,9 +132,6 @@ export async function handleFirstUserInteraction(): Promise<boolean> {
         return false
       }
     }
-    
-    // 成功したら権限を記録
-    setAudioContextPermissionGranted()
     
     return true
   } catch (error) {

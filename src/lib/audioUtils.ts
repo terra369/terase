@@ -146,23 +146,3 @@ export async function playAudioWithIOSFallback(
 
 // Silent audio data URL for unlock
 export const SILENT_AUDIO_DATA_URL = 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQQAAAAAAAA=';
-
-// Unlock audio playback on iOS
-export async function unlockIOSAudio(): Promise<boolean> {
-  try {
-    const audio = createIOSAudioElement(SILENT_AUDIO_DATA_URL);
-    audio.volume = 0.1;
-    audio.muted = false;
-    
-    await audio.play();
-    
-    // Clean up
-    audio.pause();
-    audio.remove();
-    
-    return true;
-  } catch (error) {
-    console.error('Failed to unlock iOS audio:', error);
-    return false;
-  }
-}

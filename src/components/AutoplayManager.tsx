@@ -11,6 +11,7 @@ import {
   playAudioWithIOSFallback,
   preloadAudioForIOS 
 } from '@/lib/audioUtils';
+import { unlockAudioPlayback } from '@/lib/openaiAudio';
 
 
 interface AutoplayManagerProps {
@@ -19,18 +20,15 @@ interface AutoplayManagerProps {
 
 export function AutoplayManager({ children }: AutoplayManagerProps) {
   const [showUnmuteButton, setShowUnmuteButton] = useState(false);
-  const { isMuted, setMuted, hasUserUnmuted, setHasUserUnmuted, isSpeaking } = useAudioStore();
+  const { isMuted, setMuted, setHasUserUnmuted } = useAudioStore();
   
-  // 音声再生時にミュートボタンを表示
+  // Don't show unmute button anymore since we handle consent upfront
   useEffect(() => {
-    if (isSpeaking && isMuted && !hasUserUnmuted) {
-      setShowUnmuteButton(true);
-    } else if (!isSpeaking || !isMuted || hasUserUnmuted) {
-      setShowUnmuteButton(false);
-    }
-  }, [isSpeaking, isMuted, hasUserUnmuted]);
+    // Always keep unmute button hidden
+    setShowUnmuteButton(false);
+  }, []);
   
-  // ミュート解除処理
+  // ミュート解除処理（改良版：シングルトンオーディオ対応）
   const handleUnmute = useCallback(async () => {
     try {
       // 初回のユーザーインタラクション時にAudioContextを初期化
@@ -39,39 +37,29 @@ export function AutoplayManager({ children }: AutoplayManagerProps) {
       // AudioContextが動いているか確認
       await ensureAudioContextRunning();
       
+      // シングルトンAudio要素の音声再生許可を取得
+      const unlockSuccess = await unlockAudioPlayback();
+      
+      if (unlockSuccess) {
+        console.log('Audio unlock successful via user gesture');
+      } else {
+        console.warn('Audio unlock failed, falling back to legacy method');
+      }
+      
       // ミュート解除
       setMuted(false);
       setHasUserUnmuted(true);
       setShowUnmuteButton(false);
-      
-      // 現在再生中の音声があれば、ミュートを解除して再開
-      const audioElements = document.querySelectorAll('audio');
-      audioElements.forEach(audio => {
-        if (!audio.paused && audio.muted) {
-          audio.muted = false;
-          // iOSの場合は念のため再度play()を呼ぶ
-          if (isIOS()) {
-            audio.play().catch(console.error);
-          }
-        }
-      });
     } catch (error) {
       console.error('Error unmuting audio:', error);
     }
   }, [setMuted, setHasUserUnmuted]);
 
-  // オーディオの自動再生を試行（モバイル対応強化）
+  // オーディオの自動再生を試行（シングルトンAudio対応版）
   const tryAutoplay = useCallback(async (audio: HTMLAudioElement) => {
     try {
       // AudioContextが正常に動作しているか確認
       await ensureAudioContextRunning();
-      
-      // iOS特有の属性を設定（もし設定されていなければ）
-      if (!audio.hasAttribute('playsinline')) {
-        audio.setAttribute('playsinline', 'true');
-        audio.setAttribute('webkit-playsinline', 'true');
-        audio.setAttribute('x-webkit-airplay', 'allow');
-      }
       
       // ミュート状態に応じて音声を設定
       if (isMuted) {
@@ -96,15 +84,22 @@ export function AutoplayManager({ children }: AutoplayManagerProps) {
               reject(new Error('Audio load timeout in AutoplayManager'));
             }, 5000);
             
-            audio.addEventListener('canplaythrough', () => {
+            const handleCanPlay = () => {
               clearTimeout(timeout);
+              audio.removeEventListener('canplaythrough', handleCanPlay);
+              audio.removeEventListener('error', handleError);
               resolve(undefined);
-            }, { once: true });
+            };
             
-            audio.addEventListener('error', (e) => {
+            const handleError = (e: ErrorEvent) => {
               clearTimeout(timeout);
+              audio.removeEventListener('canplaythrough', handleCanPlay);
+              audio.removeEventListener('error', handleError);
               reject(e);
-            }, { once: true });
+            };
+            
+            audio.addEventListener('canplaythrough', handleCanPlay, { once: true });
+            audio.addEventListener('error', handleError, { once: true });
           });
         }
         await audio.play();
@@ -113,10 +108,16 @@ export function AutoplayManager({ children }: AutoplayManagerProps) {
       return true;
     } catch (error) {
       console.error('Audio play failed in AutoplayManager:', error);
+      
+      // NotAllowedErrorの場合でもUnmuteButtonは表示しない
+      if (error instanceof Error && error.name === 'NotAllowedError') {
+        console.log('Audio blocked by autoplay policy, but consent should have been obtained');
+        // Don't show unmute button anymore
+      }
+      
       throw error;
     }
-  }, [isMuted]);
-
+  }, [isMuted, setShowUnmuteButton]);
 
   // グローバルなオーディオ再生要求をリッスン
   useEffect(() => {
