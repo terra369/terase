@@ -3,17 +3,16 @@
  */
 
 import { logAudioDebug, getAudioElementDebugInfo } from './audioDebug';
+import { DeviceDetection } from './deviceDetection';
 
-// iOS Safari detection
+// iOS Safari detection - deprecated, use DeviceDetection.isIOSSafari()
 export function isIOSSafari(): boolean {
-  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as unknown as { MSStream?: unknown }).MSStream;
-  const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-  return isIOS && isSafari;
+  return DeviceDetection.isIOSSafari();
 }
 
-// Check if device is iOS
+// Check if device is iOS - deprecated, use DeviceDetection.isIOS()
 export function isIOS(): boolean {
-  return /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as unknown as { MSStream?: unknown }).MSStream;
+  return DeviceDetection.isIOS();
 }
 
 // Create and configure audio element with iOS-specific attributes
@@ -136,7 +135,7 @@ export async function playAudioWithIOSFallback(
       });
       
       // On iOS, sometimes resetting src helps
-      if (isIOS() && attempt < maxRetries - 1) {
+      if (DeviceDetection.isIOS() && attempt < maxRetries - 1) {
         logAudioDebug({ error: 'Resetting audio src for retry...' });
         const currentSrc = audio.src;
         audio.src = '';
