@@ -34,7 +34,7 @@ export class TranscriptionService {
         type: `audio/${audioBlob.format}`,
         size: audioBlob.size,
       },
-      language: options.language || 'ja',
+      language: options.language ?? 'ja',
     })
 
     // Convert AudioBlob to FormData for upload
