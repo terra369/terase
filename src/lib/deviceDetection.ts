@@ -44,7 +44,7 @@ export const DeviceDetection = {
    * Check if browser supports MediaRecorder API
    */
   supportsMediaRecorder(): boolean {
-    return typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported;
+    return typeof MediaRecorder !== 'undefined' && typeof MediaRecorder.isTypeSupported === 'function';
   },
 
   /**
