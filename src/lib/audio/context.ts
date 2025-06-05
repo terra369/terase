@@ -7,5 +7,5 @@ export {
   handleFirstUserInteraction, 
   ensureAudioContextRunning,
   getAudioContext,
-  resetAudioContext
+  initializeAudioContext
 } from '../audioContext';
