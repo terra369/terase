@@ -41,7 +41,7 @@ export class APIClient {
     options: Partial<APIRequestOptions> = {}
   ): Promise<APIResponse<T>> {
     const url = `${this.config.baseURL}${endpoint}`
-    const headers = {
+    const headers: Record<string, string> = {
       'Content-Type': 'application/json',
       ...this.config.headers,
       ...options.headers,
