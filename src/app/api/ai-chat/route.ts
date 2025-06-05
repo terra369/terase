@@ -1,28 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
-import { supabaseServer } from '@/lib/supabase/server';
+import { withAuth } from '@/lib/api/middleware';
+import { AIChatSchema, validateRequestBody } from '@/lib/api/schemas';
+import { APIResponses } from '@/lib/api/responses';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-export async function POST(request: NextRequest) {
+export const POST = withAuth(async (request: NextRequest) => {
   try {
-    // 認証確認
-    const supabase = await supabaseServer();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const { message, context } = await request.json();
+    const body = await request.json();
+    const validation = validateRequestBody(AIChatSchema, body);
     
-    if (!message) {
-      return NextResponse.json(
-        { error: 'Message is required' },
-        { status: 400 }
-      );
+    if (!validation.success) {
+      return APIResponses.validationError(validation.errors);
     }
+    
+    const { message, context } = validation.data;
 
     // AI応答を生成
     const completion = await openai.chat.completions.create({
@@ -59,10 +54,6 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Error in AI chat API:', error);
-    return NextResponse.json(
-      { error: 'Failed to generate AI response' },
-      { status: 500 }
-    );
+    return APIResponses.error(error, 'Failed to generate AI response');
   }
-}
+});

@@ -1,30 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { handleFirstUserInteraction, ensureAudioContextRunning } from '@/lib/audioContext'
-
-// Get the best supported MIME type for recording
-function getSupportedMimeType(): string {
-  // Return default for SSR
-  if (typeof window === 'undefined' || !window.MediaRecorder) {
-    return 'audio/webm'
-  }
-  
-  const types = [
-    'audio/webm;codecs=opus',
-    'audio/mp4',
-    'audio/ogg;codecs=opus',
-    'audio/wav',
-    'audio/webm'
-  ]
-  
-  for (const type of types) {
-    if (MediaRecorder.isTypeSupported(type)) {
-      return type
-    }
-  }
-  
-  // Fallback to default
-  return 'audio/webm'
-}
+import { DeviceDetection } from '@/lib/deviceDetection'
+import { ErrorUtils } from '@/lib/errorHandling'
 
 export function useRecorder() {
   const [recording, setRec] = useState(false)
@@ -35,7 +12,7 @@ export function useRecorder() {
   
   // Initialize mime type on client side only
   useEffect(() => {
-    mimeType.current = getSupportedMimeType()
+    mimeType.current = DeviceDetection.getOptimalMimeType()
   }, [])
 
   useEffect(() => {
@@ -64,12 +41,11 @@ export function useRecorder() {
       await handleFirstUserInteraction()
       await ensureAudioContextRunning()
       
-      // iOS Safari検出
-      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as unknown as { MSStream?: unknown }).MSStream
-      const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent)
+      // デバイス検出
+      const deviceInfo = DeviceDetection.getDeviceInfo()
       
       // iOSの場合は少し待機してから録音開始
-      if (isIOS && isSafari) {
+      if (deviceInfo.isIOSSafari) {
         await new Promise(resolve => setTimeout(resolve, 300))
       }
       
@@ -82,6 +58,8 @@ export function useRecorder() {
         }
       })
       
+      // 最適なMIMEタイプを取得
+      mimeType.current = DeviceDetection.getOptimalMimeType()
       const options = MediaRecorder.isTypeSupported(mimeType.current) 
         ? { mimeType: mimeType.current }
         : {}
@@ -95,24 +73,25 @@ export function useRecorder() {
       }
       
       mediaRec.current.onerror = (event) => {
-        console.error('MediaRecorder error:', event)
-        setError('録音中にエラーが発生しました')
+        const errorHandler = ErrorUtils.recording(event)
+        errorHandler.log()
+        setError(errorHandler.getUserMessage())
       }
       
       mediaRec.current.start(1000) // Record in 1-second chunks
       setRec(true)
       
       // iOS Safariの場合、録音開始を確認
-      if (isIOS && isSafari) {
+      if (deviceInfo.isIOSSafari) {
         console.log('Recording started on iOS Safari, MediaRecorder state:', mediaRec.current.state)
         console.log('Stream active:', stream.active)
         console.log('Stream tracks:', stream.getTracks().map(t => ({ kind: t.kind, enabled: t.enabled, muted: t.muted })))
       }
       
     } catch (err) {
-      console.error('Recording start error:', err)
-      const errorMessage = err instanceof Error ? err.message : 'マイクへのアクセスに失敗しました'
-      setError(errorMessage)
+      const errorHandler = ErrorUtils.recording(err)
+      errorHandler.log()
+      setError(errorHandler.getUserMessage())
       throw err
     }
   }

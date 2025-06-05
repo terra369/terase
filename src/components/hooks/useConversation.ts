@@ -2,6 +2,7 @@ import { useCallback } from 'react';
 import { useConversationStore } from '@/stores/useConversationStore';
 import { useAudioStore } from '@/stores/useAudioStore';
 import { streamTTS } from '@/lib/openaiAudio';
+import { ErrorUtils } from '@/lib/errorHandling';
 
 export function useConversation(diaryId?: number) {
   const {
@@ -124,9 +125,9 @@ export function useConversation(diaryId?: number) {
       const { transcript, audioPath } = await response.json();
       return { transcript, audioPath };
     } catch (error) {
-      console.error('Transcription error:', error);
-      const errorMessage = error instanceof Error ? error.message : '音声の文字起こしに失敗しました';
-      setError(`文字起こしエラー: ${errorMessage}`);
+      const errorHandler = ErrorUtils.transcription(error);
+      errorHandler.log();
+      setError(errorHandler.getUserMessage());
       setState('idle');
       throw error;
     }
@@ -172,9 +173,9 @@ export function useConversation(diaryId?: number) {
       const { response: aiResponse } = await response.json();
       return aiResponse;
     } catch (error) {
-      console.error('AI response error:', error);
-      const errorMessage = error instanceof Error ? error.message : 'AI応答の生成に失敗しました';
-      setError(`AI応答エラー: ${errorMessage}`);
+      const errorHandler = ErrorUtils.ai(error);
+      errorHandler.log();
+      setError(errorHandler.getUserMessage());
       setState('idle');
       throw error;
     }
@@ -192,12 +193,12 @@ export function useConversation(diaryId?: number) {
       });
       
     } catch (error) {
-      console.error('TTS error:', error);
-      const errorMessage = error instanceof Error ? error.message : '音声の再生に失敗しました';
+      const errorHandler = ErrorUtils.tts(error);
+      errorHandler.log();
       
       // 自動再生がブロックされた場合はエラーとして表示しない
       if (!(error instanceof Error && error.message.includes('自動再生がブロックされました'))) {
-        setError(`音声再生エラー: ${errorMessage}`);
+        setError(errorHandler.getUserMessage());
       }
     } finally {
       setState('idle');
