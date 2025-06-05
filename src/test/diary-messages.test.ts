@@ -2,6 +2,21 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { supabaseBrowser } from '@/lib/supabase/browser'
 import { DiaryService } from '@core/useDiary'
 
+// Mock Supabase client type for testing
+type MockSupabaseClient = {
+  auth: {
+    getUser(): Promise<{ data: { user: { id: string } | null } }>;
+  };
+  from(table: string): {
+    upsert(data: any, options?: any): {
+      select(columns: string): {
+        single(): Promise<{ data: any; error: any }>;
+      };
+    };
+    insert(data: any): Promise<{ error: any }>;
+  };
+};
+
 // Test data
 const mockDiaryId = 123
 const mockUserId = 'test-user-id'
@@ -42,7 +57,7 @@ describe('Diary Messages Integration', () => {
         })
       }
 
-      const diaryService = new DiaryService(mockSupabase as any)
+      const diaryService = new DiaryService(mockSupabase as MockSupabaseClient)
       
       const result = await diaryService.createDiary({
         date: '2025-05-24',
@@ -75,7 +90,7 @@ describe('Diary Messages Integration', () => {
         from: vi.fn().mockReturnValue({ insert: mockInsert })
       }
 
-      const diaryService = new DiaryService(mockSupabase as any)
+      const diaryService = new DiaryService(mockSupabase as MockSupabaseClient)
       
       await diaryService.addMessageToDiary({
         diaryId: mockDiaryId,

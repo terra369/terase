@@ -21,7 +21,7 @@ export function useConversation(diaryId?: number) {
   
   // Use shared diary service
   const supabase = supabaseBrowser();
-  const { createDiary, addMessageToDiary, ensureTodayDiary } = useDiary(supabase);
+  const { addMessageToDiary, ensureTodayDiary } = useDiary(supabase);
 
   // Save message to diary_messages table
   const saveMessageToDiary = useCallback(async (diaryId: number, role: 'user' | 'ai', text: string, audioUrl?: string, triggerAI = false) => {
