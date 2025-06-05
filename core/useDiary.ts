@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import type { SupabaseClient as SupabaseClientType } from '@supabase/supabase-js';
 
 // Diary creation input schema
 const diaryInputSchema = z.object({
@@ -20,20 +21,8 @@ const messageInputSchema = z.object({
 
 export type MessageInput = z.infer<typeof messageInputSchema>;
 
-// Supabase client type (compatible with both browser and server)
-type SupabaseClient = {
-  auth: {
-    getUser(): Promise<{ data: { user: { id: string } | null } }>;
-  };
-  from(table: string): {
-    upsert(data: any, options?: any): {
-      select(columns: string): {
-        single(): Promise<{ data: any; error: any }>;
-      };
-    };
-    insert(data: any): Promise<{ error: any }>;
-  };
-};
+// Use the actual Supabase client type
+type SupabaseClient = SupabaseClientType<any, 'public', any>;
 
 /**
  * 共通日記管理関数
