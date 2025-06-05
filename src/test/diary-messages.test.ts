@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { supabaseBrowser } from '@/lib/supabase/browser'
+import { DiaryService } from '@core/useDiary'
 
 // Test data
 const mockDiaryId = 123
@@ -10,6 +11,86 @@ const mockAiResponse = 'すばらしい感謝の気持ちですね'
 describe('Diary Messages Integration', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+  })
+
+  describe('DiaryService Common Module', () => {
+    it('should create diary using DiaryService', async () => {
+      // Mock supabase methods
+      const mockAuth = vi.fn().mockResolvedValue({
+        data: { user: { id: mockUserId } },
+        error: null
+      })
+      const mockUpsert = vi.fn().mockReturnValue({
+        select: vi.fn().mockReturnValue({
+          single: vi.fn().mockResolvedValue({
+            data: { id: mockDiaryId },
+            error: null
+          })
+        })
+      })
+      const mockInsert = vi.fn().mockResolvedValue({ error: null })
+
+      const mockSupabase = {
+        auth: { getUser: mockAuth },
+        from: vi.fn().mockImplementation((table: string) => {
+          if (table === 'diaries') {
+            return { upsert: mockUpsert }
+          }
+          if (table === 'diary_messages') {
+            return { insert: mockInsert }
+          }
+        })
+      }
+
+      const diaryService = new DiaryService(mockSupabase as any)
+      
+      const result = await diaryService.createDiary({
+        date: '2025-05-24',
+        text: mockTranscript,
+        audioPath: 'test-audio.mp3'
+      })
+
+      expect(result).toBe(mockDiaryId)
+      expect(mockUpsert).toHaveBeenCalledWith(
+        { user_id: mockUserId, date: '2025-05-24' },
+        { onConflict: 'user_id,date', ignoreDuplicates: false }
+      )
+      expect(mockInsert).toHaveBeenCalledWith({
+        diary_id: mockDiaryId,
+        role: 'user',
+        text: mockTranscript,
+        audio_url: 'test-audio.mp3'
+      })
+    })
+
+    it('should add message to diary using DiaryService', async () => {
+      const mockAuth = vi.fn().mockResolvedValue({
+        data: { user: { id: mockUserId } },
+        error: null
+      })
+      const mockInsert = vi.fn().mockResolvedValue({ error: null })
+
+      const mockSupabase = {
+        auth: { getUser: mockAuth },
+        from: vi.fn().mockReturnValue({ insert: mockInsert })
+      }
+
+      const diaryService = new DiaryService(mockSupabase as any)
+      
+      await diaryService.addMessageToDiary({
+        diaryId: mockDiaryId,
+        role: 'ai',
+        text: mockAiResponse,
+        audioUrl: 'ai-audio.mp3'
+      })
+
+      expect(mockInsert).toHaveBeenCalledWith({
+        diary_id: mockDiaryId,
+        role: 'ai',
+        text: mockAiResponse,
+        audio_url: 'ai-audio.mp3'
+      })
+    })
   })
 
   describe('Conversation to Diary Messages Flow', () => {

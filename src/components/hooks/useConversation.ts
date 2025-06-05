@@ -3,6 +3,8 @@ import { useConversationStore } from '@/stores/useConversationStore';
 import { useAudioStore } from '@/stores/useAudioStore';
 import { streamTTS } from '@/lib/openaiAudio';
 import { ErrorUtils } from '@/lib/errorHandling';
+import { useDiary } from '@core/useDiary';
+import { supabaseBrowser } from '@/lib/supabase/browser';
 
 export function useConversation(diaryId?: number) {
   const {
@@ -16,83 +18,38 @@ export function useConversation(diaryId?: number) {
   } = useConversationStore();
 
   const { setSpeaking } = useAudioStore();
+  
+  // Use shared diary service
+  const supabase = supabaseBrowser();
+  const { createDiary, addMessageToDiary, ensureTodayDiary } = useDiary(supabase);
 
   // Save message to diary_messages table
   const saveMessageToDiary = useCallback(async (diaryId: number, role: 'user' | 'ai', text: string, audioUrl?: string, triggerAI = false) => {
     try {
-      const response = await fetch('/api/diaries/messages', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          diaryId,
-          role,
-          text,
-          audioUrl: audioUrl || null,
-          triggerAI
-        })
-      });
-
-      if (!response.ok) {
-        let errorDetail = 'メッセージの保存に失敗しました';
-        try {
-          const errorBody = await response.json();
-          console.error('Failed to save message. API response:', errorBody);
-          if (errorBody && errorBody.error) {
-            errorDetail = typeof errorBody.error === 'string' ? errorBody.error : JSON.stringify(errorBody.error);
-          }
-        } catch (e) {
-          console.error('Failed to parse error response body:', e);
-        }
-        throw new Error(errorDetail);
-      }
-
-      return await response.json();
+      // Use shared diary service for message saving with API option for web compatibility
+      await addMessageToDiary({
+        diaryId,
+        role,
+        text,
+        audioUrl,
+        triggerAI
+      }, { useAPI: true });
     } catch (error) {
       console.error('Error saving message to diary:', error);
       throw error;
     }
-  }, []);
+  }, [addMessageToDiary]);
 
   // Create or get today's diary
-  const ensureTodayDiary = useCallback(async (transcript: string, audioPath: string) => {
+  const ensureTodayDiaryLocal = useCallback(async (transcript: string, audioPath: string) => {
     try {
-      const today = new Date().toISOString().slice(0, 10);
-      
-      const response = await fetch('/api/actions/saveDiary', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          date: today,
-          text: transcript,
-          audioPath
-        })
-      });
-
-      if (!response.ok) {
-        let errorDetail = '日記の作成に失敗しました';
-        try {
-          const errorBody = await response.json();
-          console.error('Failed to create diary. API response:', errorBody);
-          if (errorBody && errorBody.error) {
-            errorDetail = typeof errorBody.error === 'string' ? errorBody.error : JSON.stringify(errorBody.error);
-          }
-        } catch (e) {
-          console.error('Failed to parse error response body:', e);
-        }
-        throw new Error(errorDetail);
-      }
-
-      const { diaryId: newDiaryId } = await response.json();
-      return newDiaryId;
+      // Use shared diary service for diary creation
+      return await ensureTodayDiary(transcript, audioPath);
     } catch (error) {
       console.error('Error creating diary:', error);
       throw error;
     }
-  }, []);
+  }, [ensureTodayDiary]);
 
   // 音声をテキストに変換（音声アップロードも含む）
   const transcribeAudio = useCallback(async (audioBlob: Blob): Promise<{ transcript: string; audioPath: string }> => {
@@ -226,7 +183,7 @@ export function useConversation(diaryId?: number) {
       // 2. 日記エントリーの作成/取得
       let currentDiaryId = diaryId;
       if (!currentDiaryId) {
-        currentDiaryId = await ensureTodayDiary(transcript, audioPath);
+        currentDiaryId = await ensureTodayDiaryLocal(transcript, audioPath);
       } else {
         // 既存の日記にユーザーメッセージを保存（AIレスポンスはDBトリガーで自動生成される）
         await saveMessageToDiary(currentDiaryId, 'user', transcript, audioPath, false);
@@ -271,7 +228,7 @@ export function useConversation(diaryId?: number) {
     transcribeAudio,
     addMessage,
     setLiveTranscript,
-    ensureTodayDiary,
+    ensureTodayDiaryLocal,
     saveMessageToDiary,
     getAIResponse,
     speakAIResponse,
