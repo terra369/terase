@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { handleFirstUserInteraction, ensureAudioContextRunning } from '@/lib/audioContext'
 import { DeviceDetection } from '@/lib/deviceDetection'
-import { ErrorHandler, ErrorUtils } from '@/lib/errorHandling'
+import { ErrorUtils } from '@/lib/errorHandling'
 
 export function useRecorder() {
   const [recording, setRec] = useState(false)
@@ -12,7 +12,7 @@ export function useRecorder() {
   
   // Initialize mime type on client side only
   useEffect(() => {
-    mimeType.current = getSupportedMimeType()
+    mimeType.current = DeviceDetection.getOptimalMimeType()
   }, [])
 
   useEffect(() => {

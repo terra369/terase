@@ -52,7 +52,7 @@ export const DeviceDetection = {
    */
   supportsWebAudio(): boolean {
     return typeof AudioContext !== 'undefined' || 
-           typeof (window as any).webkitAudioContext !== 'undefined';
+           typeof (window as unknown as { webkitAudioContext?: unknown }).webkitAudioContext !== 'undefined';
   },
 
   /**

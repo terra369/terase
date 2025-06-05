@@ -2,7 +2,7 @@ import { useCallback } from 'react';
 import { useConversationStore } from '@/stores/useConversationStore';
 import { useAudioStore } from '@/stores/useAudioStore';
 import { streamTTS } from '@/lib/openaiAudio';
-import { ErrorHandler, ErrorUtils } from '@/lib/errorHandling';
+import { ErrorUtils } from '@/lib/errorHandling';
 
 export function useConversation(diaryId?: number) {
   const {

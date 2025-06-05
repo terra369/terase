@@ -25,7 +25,6 @@ export function RecordingButton({
   recording,
   disabled = false,
   size = 'lg',
-  variant = 'desktop',
   onToggle,
   className = ''
 }: RecordingButtonProps) {

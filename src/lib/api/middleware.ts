@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { User } from '@supabase/supabase-js';
 import { supabaseServer } from '@/lib/supabase/server';
 
-export type AuthenticatedHandler<T = any> = (
+export type AuthenticatedHandler<T = unknown> = (
   req: NextRequest,
   user: User
 ) => Promise<NextResponse<T>>;
@@ -10,7 +10,7 @@ export type AuthenticatedHandler<T = any> = (
 /**
  * Middleware to handle authentication for API routes
  */
-export function withAuth<T = any>(
+export function withAuth<T = unknown>(
   handler: AuthenticatedHandler<T>
 ) {
   return async (req: NextRequest): Promise<NextResponse<T>> => {
@@ -39,7 +39,7 @@ export function withAuth<T = any>(
 /**
  * Middleware for handling CORS in API routes
  */
-export function withCORS<T = any>(
+export function withCORS<T = unknown>(
   handler: (req: NextRequest) => Promise<NextResponse<T>>
 ) {
   return async (req: NextRequest): Promise<NextResponse<T>> => {
@@ -70,7 +70,7 @@ export function withCORS<T = any>(
 /**
  * Combine authentication and CORS middleware
  */
-export function withAuthAndCORS<T = any>(
+export function withAuthAndCORS<T = unknown>(
   handler: AuthenticatedHandler<T>
 ) {
   return withCORS(withAuth(handler));

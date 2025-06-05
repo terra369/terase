@@ -111,7 +111,7 @@ export function validateQueryParams<T>(
   schema: z.ZodSchema<T>,
   searchParams: URLSearchParams
 ): { success: true; data: T } | { success: false; errors: Record<string, string[]> } {
-  const params: Record<string, any> = {};
+  const params: Record<string, string> = {};
   
   for (const [key, value] of searchParams.entries()) {
     params[key] = value;
