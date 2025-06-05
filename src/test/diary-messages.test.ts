@@ -8,12 +8,12 @@ type MockSupabaseClient = {
     getUser(): Promise<{ data: { user: { id: string } | null } }>;
   };
   from(table: string): {
-    upsert(data: any, options?: any): {
+    upsert(data: Record<string, unknown>, options?: Record<string, unknown>): {
       select(columns: string): {
-        single(): Promise<{ data: any; error: any }>;
+        single(): Promise<{ data: Record<string, unknown>; error: unknown }>;
       };
     };
-    insert(data: any): Promise<{ error: any }>;
+    insert(data: Record<string, unknown>): Promise<{ error: unknown }>;
   };
 };
 
