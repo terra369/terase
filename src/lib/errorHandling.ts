@@ -18,7 +18,7 @@ export type {
 } from '../../core/api/types';
 
 // Legacy compatibility functions
-export function createError(type: ErrorType, error: unknown, userMessage?: string): TerazeError {
+export function createError(type: ErrorType, error: unknown): TerazeError {
   return ErrorHandler.create(type, error instanceof Error ? error.message : String(error), undefined, error instanceof Error ? error : undefined);
 }
 
