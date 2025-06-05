@@ -1,54 +1,39 @@
-import { z } from 'zod';
-
 /**
- * Input validation schemas for API routes
+ * API schemas - now extends core platform-agnostic schemas
+ * This file provides backward compatibility while leveraging the new core module
  */
 
-// AI Chat Schema
-export const AIChatSchema = z.object({
-  message: z.string()
-    .min(1, 'Message cannot be empty')
-    .max(1000, 'Message is too long (max 1000 characters)'),
-  context: z.array(z.object({
-    role: z.enum(['user', 'assistant']),
-    content: z.string()
-  })).optional()
-});
+// Re-export core schemas for compatibility
+export {
+  AIChatSchema,
+  TranscribeSchema,
+  TTSSchema,
+  SaveDiarySchema,
+  DiaryMessageSchema,
+  GetDiarySchema,
+  ListDiariesSchema,
+  validateSchema,
+  isValidSchema
+} from '../../../core/api/schemas';
 
-export type AIChatInput = z.infer<typeof AIChatSchema>;
+// Re-export types with legacy names for compatibility
+export type {
+  AIChatRequest as AIChatInput,
+  TranscribeRequest,
+  TTSRequest,
+  SaveDiaryRequest,
+  DiaryMessageRequest as DiaryMessageInput,
+  GetDiaryRequest,
+  ListDiariesRequest,
+  Diary,
+  DiaryMessage
+} from '../../../core/api/schemas';
 
-// Diary Message Schema
-export const DiaryMessageSchema = z.object({
-  diaryId: z.number().int().positive(),
-  content: z.string().min(1, 'Content cannot be empty'),
-  speaker: z.enum(['user', 'ai']),
-  audioUrl: z.string().url().optional()
-});
+import { z } from 'zod';
 
-export type DiaryMessageInput = z.infer<typeof DiaryMessageSchema>;
-
-// Save Diary Schema
-export const SaveDiarySchema = z.object({
-  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date format (YYYY-MM-DD)'),
-  userText: z.string().min(1, 'User text cannot be empty'),
-  fairyText: z.string().optional(),
-  userAudioUrl: z.string().url().optional(),
-  fairyAudioUrl: z.string().url().optional(),
-  visibility: z.enum(['friends', 'private']).default('friends')
-});
-
-export type SaveDiaryInput = z.infer<typeof SaveDiarySchema>;
-
-// TTS Schema
-export const TTSSchema = z.object({
-  text: z.string()
-    .min(1, 'Text cannot be empty')
-    .max(4000, 'Text is too long for TTS (max 4000 characters)'),
-  voice: z.enum(['alloy', 'echo', 'fable', 'onyx', 'nova', 'shimmer']).optional().default('alloy'),
-  speed: z.number().min(0.25).max(4.0).optional().default(1.0)
-});
-
-export type TTSInput = z.infer<typeof TTSSchema>;
+// Legacy schemas for backward compatibility - keeping existing names
+export type SaveDiaryInput = SaveDiaryRequest;
+export type TTSInput = TTSRequest;
 
 // File Upload Schema (for transcription)
 export const FileUploadSchema = z.object({
