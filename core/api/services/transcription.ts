@@ -28,13 +28,13 @@ export class TranscriptionService {
     audioBlob: AudioBlob,
     options: TranscriptionOptions = {}
   ): Promise<APIResponse<TranscriptionResponse>> {
-    // Validate audio input
+    // Prepare request data - let schema handle defaults
     const requestData: TranscribeRequest = validateSchema(TranscribeSchema, {
       audio: {
         type: `audio/${audioBlob.format}`,
         size: audioBlob.size,
       },
-      language: options.language ?? 'ja',
+      ...(options.language && { language: options.language }),
     })
 
     // Convert AudioBlob to FormData for upload
