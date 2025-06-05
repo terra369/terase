@@ -20,7 +20,7 @@ export function useConversation(diaryId?: number) {
   const { setSpeaking } = useAudioStore();
   
   // Use shared diary service
-  const supabase = supabaseBrowser();
+  const supabase = supabaseBrowser;
   const { addMessageToDiary, ensureTodayDiary } = useDiary(supabase);
 
   // Save message to diary_messages table
