@@ -341,12 +341,13 @@ describe('useDiary Hook', () => {
           id: 2,
           success: true
         });
+        mockTypedAPIClient.getDiary.mockResolvedValue(mockDiaryWithMessages);
 
         const { result } = renderHook(() => useDiary());
 
-        // Set up initial diary state
-        act(() => {
-          result.current.diary = mockDiary;
+        // Set up initial diary state by loading it first
+        await act(async () => {
+          await result.current.getDiary('2025-06-06');
         });
 
         await act(async () => {
