@@ -6,7 +6,7 @@
  */
 
 import { useAudioStore } from '@/stores/useAudioStore';
-import { ensureAudioContextRunning } from '@/lib/audioContext';
+import { ensureAudioContextRunning, getAudioContext } from '@/lib/audioContext';
 import { 
   isIOS, 
   createIOSAudioElement,
@@ -149,6 +149,15 @@ export async function streamTTS(text: string, onProgress?: (progress: number) =>
     try {
       // AudioContextが正常に動作しているか確認
       await ensureAudioContextRunning();
+      
+      // AudioContextの状態を再度確認して、必要に応じて再開
+      const audioContext = getAudioContext();
+      if (audioContext && audioContext.state === 'suspended') {
+        console.log('Resuming suspended AudioContext before TTS playback');
+        await audioContext.resume();
+        // 少し待機してAudioContextが確実にrunning状態になるのを待つ
+        await new Promise(resolve => setTimeout(resolve, 50));
+      }
       
       if (isIOS()) {
         // iOS専用の再生処理

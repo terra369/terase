@@ -2,6 +2,8 @@
 import { useState, useEffect } from 'react'
 import { Button } from './button'
 import { Mic, Volume2 } from 'lucide-react'
+import { initializeAudioContext } from '@/lib/audioContext'
+import { startAudioKeepAlive } from '@/lib/audioKeepAlive'
 
 interface AudioConsentOverlayProps {
   onConsent: () => void
@@ -39,7 +41,36 @@ export function AudioConsentOverlay({ onConsent }: AudioConsentOverlayProps) {
       {/* Start button */}
       <div className="flex flex-col items-center gap-4">
         <Button
-          onClick={onConsent}
+          onClick={async () => {
+            // AudioContextを事前に初期化して、確実にアクティブにする
+            const audioContext = await initializeAudioContext()
+            if (audioContext) {
+              // 小さな無音を再生してAudioContextを確実にアクティブにする
+              const oscillator = audioContext.createOscillator()
+              const gainNode = audioContext.createGain()
+              gainNode.gain.value = 0.00001
+              oscillator.connect(gainNode)
+              gainNode.connect(audioContext.destination)
+              oscillator.start()
+              oscillator.stop(audioContext.currentTime + 0.1)
+              
+              // AudioContextがrunning状態になるまで待機
+              if (audioContext.state === 'suspended') {
+                await audioContext.resume()
+              }
+              
+              // AudioContextをアクティブに保つ仕組みを開始
+              startAudioKeepAlive()
+              
+              // 少し待機してから実際のコンセント処理を実行
+              setTimeout(() => {
+                onConsent()
+              }, 100)
+            } else {
+              // AudioContext初期化に失敗した場合でも続行
+              onConsent()
+            }
+          }}
           className="w-[120px] h-[120px] md:w-[140px] md:h-[140px] bg-[#ec6a52] hover:bg-[#ec6a52]/90 rounded-full flex items-center justify-center transition-all duration-200 active:scale-95"
           size="icon"
         >
