@@ -38,7 +38,7 @@
 - **Error Handling**: Centralized error management with Japanese user messages
 - **Device Detection**: Cross-platform compatibility with iOS Safari optimizations
 - **API Middleware**: Standardized authentication, CORS, and input validation
-- **Audio Organization**: Modular audio system with barrel exports and cross-platform foundation
+- **Audio Organization**: Modular audio system with barrel exports
 - **Shared Components**: Reusable UI components and recording workflows
 
 ### Development & CI/CD
@@ -53,9 +53,6 @@
 
 ```
 terase/
-├── core/                      # Shared modules for Web/React Native
-│   └── hooks/                 # Cross-platform hooks
-│       └── useAudio.ts        # Unified audio recording interface
 ├── public/                    # Static assets
 │   ├── file.svg
 │   ├── globe.svg
@@ -570,37 +567,6 @@ const { handleToggleRecording, isRecording, error } = useRecordingFlow({
 });
 ```
 
-### Cross-Platform Audio System (`/core/hooks/useAudio.ts`)
-
-React Native準備のための統一音声インターフェース:
-
-- **Platform Adapter Pattern**: WebとReact Nativeの抽象化
-- **Unified Interface**: `useAudio` hookで両プラットフォームをサポート
-- **Type Safety**: 完全なTypeScript対応の統一型定義
-- **Backward Compatibility**: 既存の`useRecorder`との完全互換性
-- **Device Optimization**: iOS Safari等の各デバイス最適化
-
-```typescript
-// Usage example
-import { useAudio } from '@core/hooks/useAudio';
-
-const { recording, start, stop, isSupported } = useAudio({
-  channelCount: 1,
-  sampleRate: 16000,
-  echoCancellation: true
-});
-
-// Platform-specific adapter injection for React Native
-const nativeAdapter = createReactNativeAudioAdapter();
-const { recording, start, stop } = useAudio({ adapter: nativeAdapter });
-```
-
-**Key Features**:
-- **AudioRecorderAdapter**: プラットフォーム固有実装の抽象化
-- **DeviceInfo & AudioContextManager**: デバイス検出とオーディオコンテキスト管理
-- **Error Handling**: 統一エラー処理とレトライロジック
-- **Path Mapping**: `@core/*` パスでクリーンインポート
-
 ### Performance & Maintainability Benefits
 
 - **40% Code Reduction**: Eliminated duplicate logic across components
@@ -608,7 +574,6 @@ const { recording, start, stop } = useAudio({ adapter: nativeAdapter });
 - **Error Handling**: Consistent error processing with user-friendly messages
 - **iOS Compatibility**: Improved audio functionality on iOS Safari
 - **Developer Experience**: Easier imports, better organization, clearer patterns
-- **React Native Ready**: Cross-platform foundation for mobile app development
 
 ## 🚀 Deployment & CI/CD
 
@@ -745,7 +710,7 @@ Follow Conventional Commits:
 ---
 
 **Last Updated**: 2025-06-05
-**Version**: 1.2.0
+**Version**: 1.1.0
 **Maintainer**: terra369 <terra369@users.noreply.github.com>
 
-This documentation follows the TDD (Test-Driven Documentation) approach requested in Issue #23, providing comprehensive coverage of the terase project structure, conventions, and development workflow. Version 1.2.0 includes cross-platform audio architecture with unified React Native/Web interface, platform adapter pattern, and React Native preparation foundation.
+This documentation follows the TDD (Test-Driven Documentation) approach requested in Issue #23, providing comprehensive coverage of the terase project structure, conventions, and development workflow. Version 1.1.0 includes major architecture improvements with centralized error handling, device detection, API middleware, and audio system organization.
