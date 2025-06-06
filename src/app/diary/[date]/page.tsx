@@ -36,7 +36,7 @@ export default async function DiaryDetail(
                 {format(new Date(date), 'yyyy年M月d日')}
             </h1>
             {/* Client Component に渡す */}
-            <DiaryDetailClient diaryId={data.id} initialMsgs={msgs} />
+            <DiaryDetailClient diaryId={data.id} initialMsgs={msgs} date={date} />
         </main>
     );
 }

@@ -4,6 +4,7 @@ import { useState, useCallback, useEffect } from 'react'
 import { Card, CardContent } from "@/components/ui/card"
 import { ChevronDown, ChevronUp, X } from "lucide-react"
 import { supabaseBrowser } from '@/lib/supabase/browser'
+import { useDiary } from '@/core/hooks/useDiary'
 
 interface DiaryMessage {
   id: number

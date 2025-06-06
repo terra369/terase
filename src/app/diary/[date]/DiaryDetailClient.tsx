@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { supabaseBrowser } from '@/lib/supabase/browser';
-import { useDiaryRealtime } from '@/lib/useDiaryRealtime';
+import { useDiary } from '@/core/hooks/useDiary';
 
 type Msg = {
     id: number;
@@ -29,30 +29,54 @@ const HUDToast = () => (
 
 
 export default function DiaryDetailClient(
-    { diaryId, initialMsgs }: { diaryId: number; initialMsgs: Msg[] },
+    { diaryId, initialMsgs, date }: { diaryId: number; initialMsgs: Msg[]; date: string },
 ) {
-    const [messages, setMessages] = useState<Msg[]>(initialMsgs);
+    const [localMessages, setLocalMessages] = useState<Msg[]>(initialMsgs);
+    
+    // Use centralized diary hook for real-time updates
+    const { messages: diaryMessages, getDiary } = useDiary();
 
-    /* 署名 URL を付与して state 追加 */
-    const handleInsert = useCallback(async (m: Msg) => {
-        if (m.audio_url) {
-            const { data } = await supabaseBrowser
-                .storage
-                .from('diary-audio')
-                .createSignedUrl(m.audio_url, 600);
-            m.signed = data?.signedUrl ?? null;
+    // Load diary data on mount
+    useEffect(() => {
+        getDiary(date);
+    }, [getDiary, date]);
+
+    // Update local messages when diary messages change
+    useEffect(() => {
+        const updateMessagesWithSignedUrls = async () => {
+            const messagesWithUrls = await Promise.all(
+                diaryMessages.map(async (msg) => {
+                    let signed: string | null = null;
+                    if (msg.audio_url) {
+                        const { data } = await supabaseBrowser
+                            .storage
+                            .from('diary-audio')
+                            .createSignedUrl(msg.audio_url, 600);
+                        signed = data?.signedUrl ?? null;
+                    }
+                    return {
+                        id: msg.id,
+                        role: msg.role,
+                        text: msg.text,
+                        audio_url: msg.audio_url,
+                        signed,
+                        created_at: msg.created_at
+                    } as Msg;
+                })
+            );
+            setLocalMessages(messagesWithUrls);
+        };
+
+        if (diaryMessages.length > 0) {
+            updateMessagesWithSignedUrls();
         }
-        setMessages((prev) => [...prev, m]);
-    }, []);
-
-
-    useDiaryRealtime(diaryId, handleInsert);
+    }, [diaryMessages]);
 
     return (
         <div className="space-y-3 md:space-y-4 relative">
             {/* Chat messages */}
             <div className="space-y-3 md:space-y-4 max-h-[60vh] md:max-h-[50vh] overflow-y-auto p-1 md:p-2">
-                {messages.map((m) => (
+                {localMessages.map((m) => (
                     <div
                         key={m.id}
                         className={`p-3 md:p-4 rounded-lg text-sm md:text-base ${m.role === 'ai'

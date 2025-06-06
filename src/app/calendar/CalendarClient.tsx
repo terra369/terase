@@ -1,12 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { ArrowLeft } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { format } from 'date-fns'
 import Calendar from '@/app/components/Calendar'
 import ExpandableDiaryView from '@/app/components/ExpandableDiaryView'
-import useSWR from 'swr'
+import { useDiary } from '@/core/hooks/useDiary'
 
 interface DiaryMessage {
   id: number
@@ -25,22 +25,23 @@ interface DiaryData {
 export default function CalendarClient() {
   const router = useRouter()
   const [selectedDate, setSelectedDate] = useState<Date>(new Date())
-
-  const fetcher = async (url: string): Promise<DiaryData | null> => {
-    const response = await fetch(url)
-    if (!response.ok) return null
-    return response.json()
-  }
+  
+  // Use centralized diary hook
+  const { diary, messages, isLoading, getDiary } = useDiary()
 
   const formattedDate = format(selectedDate, 'yyyy-MM-dd')
-  const { data: diaryData } = useSWR<DiaryData | null>(
-    `/api/diaries/${formattedDate}`,
-    fetcher,
-    {
-      revalidateOnFocus: false,
-      shouldRetryOnError: false
-    }
-  )
+
+  // Fetch diary data when selected date changes
+  useEffect(() => {
+    getDiary(formattedDate)
+  }, [getDiary, formattedDate])
+
+  // Convert to the format expected by ExpandableDiaryView
+  const diaryData: DiaryData | null = diary ? {
+    id: diary.id,
+    date: diary.date,
+    messages: messages
+  } : null
 
   const handleDateSelect = (date: Date) => {
     setSelectedDate(date)
