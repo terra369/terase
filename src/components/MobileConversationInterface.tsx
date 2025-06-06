@@ -61,6 +61,13 @@ export default function MobileConversationInterface() {
     try {
       // Initialize audio context and unlock playback
       await handleFirstUserInteraction();
+      
+      // Add delay for iOS Safari
+      const deviceInfo = (await import('@/lib/deviceDetection')).DeviceDetection.getDeviceInfo();
+      if (deviceInfo.isIOS && deviceInfo.isSafari) {
+        await new Promise(resolve => setTimeout(resolve, 200));
+      }
+      
       await unlockAudioPlayback();
       
       // Update audio store state

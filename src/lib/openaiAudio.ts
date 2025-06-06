@@ -65,6 +65,14 @@ function cleanupBlobUrl() {
 
 export async function streamTTS(text: string, onProgress?: (progress: number) => void) {
   try {
+    // iOS Safariの場合、AudioContextが確実に動作しているか確認
+    if (isIOS()) {
+      const isAudioReady = await ensureAudioContextRunning();
+      if (!isAudioReady) {
+        console.warn('AudioContext is not ready on iOS Safari');
+      }
+    }
+    
     // サーバーサイドAPIエンドポイントを呼び出す
     const response = await fetch('/api/tts', {
       method: 'POST',
@@ -145,13 +153,29 @@ export async function streamTTS(text: string, onProgress?: (progress: number) =>
       if (isIOS()) {
         // iOS専用の再生処理
         try {
+          // iOS Safariでは少し待機してからプリロード
+          await new Promise(resolve => setTimeout(resolve, 100));
           await preloadAudioForIOS(audio);
           await playAudioWithIOSFallback(audio);
         } catch (iosError) {
-          console.warn('iOS audio playback failed, falling back to AutoplayManager:', iosError);
-          // フォールバックとしてAutoplayManagerを使用
+          console.warn('iOS audio playback failed, using AutoplayManager fallback:', iosError);
+          // iOS Safariでは必ずAutoplayManagerも試す
           const event = new CustomEvent('audioPlayRequest', { detail: audio });
           window.dispatchEvent(event);
+          // エラーを投げずに正常終了として扱う
+          return {
+            audio,
+            blob: () => blob,
+            stop: () => {
+              audio.pause();
+              audio.currentTime = 0;
+              setSpeaking(false);
+              if (progressInterval) {
+                clearInterval(progressInterval);
+                progressInterval = null;
+              }
+            }
+          };
         }
       } else {
         // iOS以外の通常処理
@@ -182,11 +206,20 @@ export async function streamTTS(text: string, onProgress?: (progress: number) =>
         await audio.play();
       }
     } catch (error) {
-      console.error('Direct audio play failed, trying via AutoplayManager:', error);
-      // AutoplayManagerにオーディオ再生要求を送信（モバイル必須）
-      const event = new CustomEvent('audioPlayRequest', { detail: audio });
-      window.dispatchEvent(event);
-      // エラーとして再投げしないでフォールバックに任せる
+      console.error('Direct audio play failed:', error);
+      
+      // iOS Safariの場合は常にAutoplayManagerを使用
+      if (isIOS()) {
+        console.log('Using AutoplayManager for iOS Safari');
+        const event = new CustomEvent('audioPlayRequest', { detail: audio });
+        window.dispatchEvent(event);
+        // iOS Safariではエラーを投げずに正常終了
+      } else {
+        // iOS以外でもAutoplayManagerを試す
+        console.log('Attempting AutoplayManager fallback');
+        const event = new CustomEvent('audioPlayRequest', { detail: audio });
+        window.dispatchEvent(event);
+      }
     }
     
     // コントロール用のオブジェクトを返す
@@ -283,12 +316,18 @@ export async function unlockAudioPlayback(): Promise<boolean> {
       // 元の設定を復元する前に少し待つ（iOS対策）
       await new Promise(resolve => setTimeout(resolve, 50));
       
-      // 元の設定を復元
-      if (originalSrc && originalSrc !== '' && originalSrc !== 'about:blank') {
-        audio.src = originalSrc;
-      } else {
-        // srcが元々空の場合は、空のままにする（about:blankは設定しない）
+      // iOS Safariでは元のソースを復元しない（問題の原因）
+      if (isIOS()) {
+        // iOS: ソースをクリアして、クリーンな状態を保つ
+        audio.src = '';
         audio.removeAttribute('src');
+      } else {
+        // iOS以外: 元の設定を復元
+        if (originalSrc && originalSrc !== '' && originalSrc !== 'about:blank') {
+          audio.src = originalSrc;
+        } else {
+          audio.removeAttribute('src');
+        }
       }
       audio.muted = originalMuted;
       audio.volume = originalVolume || 1.0;

@@ -24,14 +24,14 @@ export function createIOSAudioElement(src?: string): HTMLAudioElement {
   audio.setAttribute('webkit-playsinline', 'true');
   audio.setAttribute('x-webkit-airplay', 'allow');
   
-  // Set preload strategy - 'none' initially to prevent errors
-  audio.preload = 'none';
-  
   // Disable controls to prevent UI issues
   audio.controls = false;
   
   // Set initial volume
   audio.volume = 1.0;
+  
+  // Don't set preload initially for iOS
+  // Don't set src initially - will be set later
   
   // Apply muted state from store if available
   if (typeof window !== 'undefined') {
@@ -39,12 +39,6 @@ export function createIOSAudioElement(src?: string): HTMLAudioElement {
       const { isMuted } = useAudioStore.getState();
       audio.muted = isMuted;
     });
-  }
-  
-  if (src) {
-    audio.src = src;
-    // Only set preload to 'auto' if we have a valid src
-    audio.preload = 'auto';
   }
   
   return audio;

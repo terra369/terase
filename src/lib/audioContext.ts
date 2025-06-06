@@ -59,21 +59,38 @@ export async function ensureAudioContextRunning(): Promise<boolean> {
     const audioContext = await initializeAudioContext()
     if (!audioContext) return false
     
+    // iOS Safariの検出
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as unknown as { MSStream?: unknown }).MSStream
+    const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent)
+    
     // iOSの場合、より積極的にresumeを試みる
     if (audioContext.state === 'suspended') {
       await audioContext.resume()
       
-      // iOS Safariの検出
-      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as unknown as { MSStream?: unknown }).MSStream
-      if (isIOS) {
-        // iOSの場合は少し待機してから再度確認
-        await new Promise(resolve => setTimeout(resolve, 100))
+      if (isIOS && isSafari) {
+        // iOS Safariの場合は長めに待機
+        await new Promise(resolve => setTimeout(resolve, 200))
         
         // まだsuspendedの場合は再度resume
         if (audioContext.state === 'suspended') {
           await audioContext.resume()
+          // さらに待機
+          await new Promise(resolve => setTimeout(resolve, 100))
+        }
+        
+        // 最終確認
+        if (audioContext.state === 'suspended') {
+          console.warn('AudioContext remains suspended on iOS Safari after multiple attempts');
+          // iOS Safariではこれ以上試しても意味がないので、trueを返す
+          return true; // 処理を続行させる
         }
       }
+    }
+    
+    // iOS Safariでは、suspendedでも処理を続行
+    if (isIOS && isSafari && audioContext.state === 'suspended') {
+      console.log('Proceeding with suspended AudioContext on iOS Safari');
+      return true;
     }
     
     return audioContext.state === 'running'
@@ -106,8 +123,8 @@ export async function handleFirstUserInteraction(): Promise<boolean> {
     gainNode.connect(audioContext.destination)
     
     // iOS Safariでは少し長めの再生時間と音量を設定
-    const duration = isIOS && isSafari ? 0.25 : 0.1
-    const volume = 0.00001 // ほぼ聞こえない音量に設定
+    const duration = isIOS && isSafari ? 0.5 : 0.1 // iOS Safariではさらに長く
+    const volume = isIOS && isSafari ? 0.001 : 0.00001 // iOS Safariでは少し大きめの音量
     
     gainNode.gain.setValueAtTime(volume, audioContext.currentTime)
     oscillator.frequency.setValueAtTime(440, audioContext.currentTime)
@@ -115,7 +132,7 @@ export async function handleFirstUserInteraction(): Promise<boolean> {
     oscillator.stop(audioContext.currentTime + duration)
     
     // iOS Safariでは長めに待機
-    const waitTime = isIOS && isSafari ? 200 : 50
+    const waitTime = isIOS && isSafari ? 300 : 50
     await new Promise(resolve => setTimeout(resolve, waitTime))
     
     // iOS Safariでは追加の確認を行う
