@@ -26,6 +26,7 @@ const mockTypedAPIClient = typedAPIClient as unknown as {
   saveDiary: Mock;
   saveDiaryMessage: Mock;
   getDiaryMessages: Mock;
+  deleteDiary: Mock;
 };
 
 const mockSupabase = {
@@ -74,6 +75,11 @@ const mockDiaryWithMessages = {
 describe('useDiary Hook', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    
+    // Reset ErrorHandler mock
+    (ErrorHandler.fromUnknown as Mock).mockReturnValue(mockErrorHandler);
+    mockErrorHandler.getUserMessage.mockReturnValue('エラーが発生しました');
+    mockErrorHandler.log.mockClear();
     
     // Default auth mock
     mockSupabase.auth.getUser.mockResolvedValue({
@@ -126,8 +132,10 @@ describe('useDiary Hook', () => {
     describe('createDiary', () => {
       it('should create a new diary successfully', async () => {
         mockTypedAPIClient.saveDiary.mockResolvedValue({
-          diaryId: 1,
-          success: true
+          data: {
+            diaryId: 1,
+            success: true
+          }
         });
 
         const { result } = renderHook(() => useDiary());
@@ -146,7 +154,8 @@ describe('useDiary Hook', () => {
         expect(mockTypedAPIClient.saveDiary).toHaveBeenCalledWith({
           date: '2025-06-06',
           text: 'テスト日記',
-          audioPath: '/audio/test.wav'
+          audioPath: '/audio/test.wav',
+          visibility: 'friends'
         });
       });
 
@@ -187,7 +196,7 @@ describe('useDiary Hook', () => {
         expect(result.current.isCreating).toBe(true);
 
         act(() => {
-          resolvePromise!({ diaryId: 1 });
+          resolvePromise!({ data: { diaryId: 1 } });
         });
 
         await waitFor(() => {
@@ -199,8 +208,10 @@ describe('useDiary Hook', () => {
     describe('updateDiary', () => {
       it('should update existing diary successfully', async () => {
         mockTypedAPIClient.saveDiary.mockResolvedValue({
-          diaryId: 1,
-          success: true
+          data: {
+            diaryId: 1,
+            success: true
+          }
         });
 
         const { result } = renderHook(() => useDiary());
@@ -274,7 +285,7 @@ describe('useDiary Hook', () => {
   describe('Diary Fetching', () => {
     describe('getDiary', () => {
       it('should fetch diary by date successfully', async () => {
-        mockTypedAPIClient.getDiary.mockResolvedValue(mockDiaryWithMessages);
+        mockTypedAPIClient.getDiary.mockResolvedValue({ data: mockDiaryWithMessages });
 
         const { result } = renderHook(() => useDiary());
 
@@ -306,7 +317,7 @@ describe('useDiary Hook', () => {
     describe('getTodayDiary', () => {
       it('should fetch today\'s diary successfully', async () => {
         const today = new Date().toISOString().slice(0, 10);
-        mockTypedAPIClient.getDiary.mockResolvedValue(mockDiaryWithMessages);
+        mockTypedAPIClient.getDiary.mockResolvedValue({ data: mockDiaryWithMessages });
 
         const { result } = renderHook(() => useDiary());
 
@@ -319,7 +330,7 @@ describe('useDiary Hook', () => {
       });
 
       it('should handle when no diary exists for today', async () => {
-        mockTypedAPIClient.getDiary.mockResolvedValue(null);
+        mockTypedAPIClient.getDiary.mockResolvedValue({ data: null });
 
         const { result } = renderHook(() => useDiary());
 
@@ -338,10 +349,12 @@ describe('useDiary Hook', () => {
     describe('addMessage', () => {
       it('should add message to diary successfully', async () => {
         mockTypedAPIClient.saveDiaryMessage.mockResolvedValue({
-          id: 2,
-          success: true
+          data: {
+            id: 2,
+            success: true
+          }
         });
-        mockTypedAPIClient.getDiary.mockResolvedValue(mockDiaryWithMessages);
+        mockTypedAPIClient.getDiary.mockResolvedValue({ data: mockDiaryWithMessages });
 
         const { result } = renderHook(() => useDiary());
 
@@ -395,12 +408,17 @@ describe('useDiary Hook', () => {
         unsubscribe: vi.fn()
       };
       mockSupabase.channel.mockReturnValue(mockChannel);
-      mockTypedAPIClient.getDiary.mockResolvedValue(mockDiaryWithMessages);
+      mockTypedAPIClient.getDiary.mockResolvedValue({ data: mockDiaryWithMessages });
 
       const { result } = renderHook(() => useDiary());
 
       await act(async () => {
         await result.current.getDiary('2025-06-06');
+      });
+
+      // Wait for the 50ms delay in setupRealtimeSubscription
+      await act(async () => {
+        await new Promise(resolve => setTimeout(resolve, 100));
       });
 
       expect(mockSupabase.channel).toHaveBeenCalledWith(`diary-messages-${mockDiary.id}`);
@@ -431,13 +449,21 @@ describe('useDiary Hook', () => {
       });
       
       mockSupabase.channel.mockReturnValue(mockChannel);
-      mockTypedAPIClient.getDiary.mockResolvedValue(mockDiaryWithMessages);
+      mockTypedAPIClient.getDiary.mockResolvedValue({ data: mockDiaryWithMessages });
 
       const { result } = renderHook(() => useDiary());
 
       await act(async () => {
         await result.current.getDiary('2025-06-06');
       });
+
+      // Wait for the 50ms delay in setupRealtimeSubscription
+      await act(async () => {
+        await new Promise(resolve => setTimeout(resolve, 100));
+      });
+
+      // Ensure the callback was captured
+      expect(realtimeCallback).toBeDefined();
 
       // Simulate real-time insert
       const newMessage = {
@@ -461,15 +487,26 @@ describe('useDiary Hook', () => {
       expect(result.current.messages[1]).toEqual(newMessage);
     });
 
-    it('should clean up subscription on unmount', () => {
+    it('should clean up subscription on unmount', async () => {
       const mockChannel = {
         on: vi.fn().mockReturnThis(),
         subscribe: vi.fn().mockReturnThis(),
         unsubscribe: vi.fn()
       };
       mockSupabase.channel.mockReturnValue(mockChannel);
+      mockTypedAPIClient.getDiary.mockResolvedValue({ data: mockDiaryWithMessages });
 
-      const { unmount } = renderHook(() => useDiary());
+      const { result, unmount } = renderHook(() => useDiary());
+
+      // First load a diary to trigger subscription
+      await act(async () => {
+        await result.current.getDiary('2025-06-06');
+      });
+
+      // Wait for subscription to be set up
+      await act(async () => {
+        await new Promise(resolve => setTimeout(resolve, 100));
+      });
 
       unmount();
 
@@ -478,14 +515,21 @@ describe('useDiary Hook', () => {
   });
 
   describe('Error Handling and State Management', () => {
-    it('should clear error when clearError is called', () => {
+    it('should clear error when clearError is called', async () => {
+      const error = new Error('テストエラー');
+      mockTypedAPIClient.getDiary.mockRejectedValue(error);
+
       const { result } = renderHook(() => useDiary());
 
-      // Set an error
-      act(() => {
-        result.current.error = 'テストエラー';
+      // Trigger an error by calling getDiary with a failing mock
+      await act(async () => {
+        await result.current.getDiary('2025-06-06');
       });
 
+      // Verify error was set
+      expect(result.current.error).toBe('エラーが発生しました');
+
+      // Clear the error
       act(() => {
         result.current.clearError();
       });
@@ -524,7 +568,7 @@ describe('useDiary Hook', () => {
         await result.current.getDiary('2025-06-06');
       });
 
-      expect(ErrorHandler.fromUnknown).toHaveBeenCalledWith(error, 'diary');
+      expect(ErrorHandler.fromUnknown).toHaveBeenCalledWith(error, 'network');
       expect(mockErrorHandler.log).toHaveBeenCalled();
       expect(result.current.error).toBe('エラーが発生しました');
     });
@@ -552,8 +596,14 @@ describe('useDiary Hook', () => {
   });
 
   describe('Type Safety and Data Consistency', () => {
-    it('should enforce consistent DiaryMessage interface', () => {
+    it('should enforce consistent DiaryMessage interface', async () => {
+      mockTypedAPIClient.getDiary.mockResolvedValue({ data: mockDiaryWithMessages });
       const { result } = renderHook(() => useDiary());
+
+      // Load a diary to get messages
+      await act(async () => {
+        await result.current.getDiary('2025-06-06');
+      });
 
       // Test that messages array has consistent type
       expect(result.current.messages).toEqual(

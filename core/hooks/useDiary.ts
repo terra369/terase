@@ -68,10 +68,11 @@ export function useDiary() {
   // Error state
   const [error, setError] = useState<string | null>(null);
   
-  // Real-time subscription
+  // Real-time subscription and AbortController refs
   const currentDiaryRef = useRef<Diary | null>(null);
   const subscriptionRef = useRef<any>(null);
   const currentDateRef = useRef<string | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   // Helper function to clear error
   const clearError = useCallback((): void => {
@@ -80,22 +81,25 @@ export function useDiary() {
 
   // Helper function to setup real-time subscription
   const setupRealtimeSubscription = useCallback((diaryId: number) => {
-    // Clean up existing subscription
+    // Clean up existing subscription to prevent race conditions
     if (subscriptionRef.current) {
       supabaseBrowser.removeChannel(subscriptionRef.current);
+      subscriptionRef.current = null;
     }
 
-    const channel = supabaseBrowser
-      .channel(`diary-messages-${diaryId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'diary_messages',
-          filter: `diary_id=eq.${diaryId}`
-        },
-        (payload) => {
+    // Add small delay to ensure cleanup is complete
+    setTimeout(() => {
+      const channel = supabaseBrowser
+        .channel(`diary-messages-${diaryId}`)
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'diary_messages',
+            filter: `diary_id=eq.${diaryId}`
+          },
+          (payload) => {
           switch (payload.eventType) {
             case 'INSERT':
               setMessages(prev => {
@@ -129,6 +133,7 @@ export function useDiary() {
       .subscribe();
 
     subscriptionRef.current = channel;
+    }, 50); // 50ms delay to prevent race conditions
   }, []);
 
   // Create a new diary
@@ -136,6 +141,9 @@ export function useDiary() {
     setIsCreating(true);
     setError(null);
 
+    // Setup AbortController for this operation
+    abortControllerRef.current = new AbortController();
+    
     try {
       const response = await typedAPIClient.saveDiary({
         date: data.date,
@@ -150,12 +158,13 @@ export function useDiary() {
         throw new Error('日記の作成に失敗しました');
       }
     } catch (err) {
-      const errorHandler = ErrorHandler.fromUnknown(err, 'unknown');
+      const errorHandler = ErrorHandler.fromUnknown(err, 'network');
       errorHandler.log();
       setError(errorHandler.getUserMessage());
       throw err;
     } finally {
       setIsCreating(false);
+      abortControllerRef.current = null;
     }
   }, []);
 
@@ -164,6 +173,9 @@ export function useDiary() {
     setIsUpdating(true);
     setError(null);
 
+    // Setup AbortController for this operation
+    abortControllerRef.current = new AbortController();
+    
     try {
       await typedAPIClient.saveDiary({
         diaryId,
@@ -175,12 +187,13 @@ export function useDiary() {
         setDiary(prev => prev ? { ...prev, ...data } : null);
       }
     } catch (err) {
-      const errorHandler = ErrorHandler.fromUnknown(err, 'unknown');
+      const errorHandler = ErrorHandler.fromUnknown(err, 'network');
       errorHandler.log();
       setError(errorHandler.getUserMessage());
       throw err;
     } finally {
       setIsUpdating(false);
+      abortControllerRef.current = null;
     }
   }, [diary]);
 
@@ -189,6 +202,9 @@ export function useDiary() {
     setIsDeleting(true);
     setError(null);
 
+    // Setup AbortController for this operation
+    abortControllerRef.current = new AbortController();
+    
     try {
       await typedAPIClient.deleteDiary(diaryId);
 
@@ -203,12 +219,13 @@ export function useDiary() {
         }
       }
     } catch (err) {
-      const errorHandler = ErrorHandler.fromUnknown(err, 'unknown');
+      const errorHandler = ErrorHandler.fromUnknown(err, 'network');
       errorHandler.log();
       setError(errorHandler.getUserMessage());
       throw err;
     } finally {
       setIsDeleting(false);
+      abortControllerRef.current = null;
     }
   }, [diary]);
 
@@ -218,11 +235,17 @@ export function useDiary() {
     setError(null);
     currentDateRef.current = date;
 
+    // Setup AbortController for this operation
+    abortControllerRef.current = new AbortController();
+    
     try {
       const response = await typedAPIClient.getDiary(date);
       
-      if (response.data) {
-        const { messages: diaryMessages, ...diaryData } = response.data;
+      // Handle API response - check if response has data wrapper or is direct data
+      const responseData = response.data || response;
+      
+      if (responseData && responseData.id) {
+        const { messages: diaryMessages, ...diaryData } = responseData;
         setDiary(diaryData);
         setMessages(diaryMessages || []);
         currentDiaryRef.current = diaryData;
@@ -242,11 +265,12 @@ export function useDiary() {
         }
       }
     } catch (err) {
-      const errorHandler = ErrorHandler.fromUnknown(err, 'unknown');
+      const errorHandler = ErrorHandler.fromUnknown(err, 'network');
       errorHandler.log();
       setError(errorHandler.getUserMessage());
     } finally {
       setIsLoading(false);
+      abortControllerRef.current = null;
     }
   }, [setupRealtimeSubscription]);
 
@@ -260,6 +284,9 @@ export function useDiary() {
   const addMessage = useCallback(async (data: AddMessageData): Promise<void> => {
     setError(null);
 
+    // Setup AbortController for this operation
+    abortControllerRef.current = new AbortController();
+    
     try {
       await typedAPIClient.saveDiaryMessage({
         diaryId: data.diaryId,
@@ -271,10 +298,12 @@ export function useDiary() {
 
       // Real-time subscription will handle updating local state
     } catch (err) {
-      const errorHandler = ErrorHandler.fromUnknown(err, 'unknown');
+      const errorHandler = ErrorHandler.fromUnknown(err, 'network');
       errorHandler.log();
       setError(errorHandler.getUserMessage());
       throw err;
+    } finally {
+      abortControllerRef.current = null;
     }
   }, []);
 
@@ -285,11 +314,17 @@ export function useDiary() {
     }
   }, [getDiary]);
 
-  // Cleanup subscription on unmount
+  // Cleanup subscriptions and abort operations on unmount
   useEffect(() => {
     return () => {
+      // Cleanup real-time subscription
       if (subscriptionRef.current) {
         supabaseBrowser.removeChannel(subscriptionRef.current);
+      }
+      
+      // Abort any ongoing operations
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
       }
     };
   }, []);
