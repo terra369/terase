@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { supabaseBrowser } from '@/lib/supabase/browser';
 import { useDiary } from '@/core/hooks/useDiary';
 
@@ -29,7 +29,7 @@ const HUDToast = () => (
 
 
 export default function DiaryDetailClient(
-    { diaryId, initialMsgs, date }: { diaryId: number; initialMsgs: Msg[]; date: string },
+    { initialMsgs, date }: { diaryId: number; initialMsgs: Msg[]; date: string },
 ) {
     const [localMessages, setLocalMessages] = useState<Msg[]>(initialMsgs);
     

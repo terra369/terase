@@ -59,7 +59,9 @@ terase/
 │   │   └── apiClient.test.ts  # Comprehensive test suite for API client
 │   └── hooks/                 # Cross-platform hooks
 │       ├── useAudio.ts        # Unified audio recording interface
-│       └── useAudio.test.ts   # Tests for audio hook
+│       ├── useAudio.test.ts   # Tests for audio hook
+│       ├── useDiary.ts        # Centralized diary operations hook
+│       └── useDiary.test.ts   # Tests for diary hook
 ├── public/                    # Static assets
 │   ├── file.svg
 │   ├── globe.svg
@@ -850,10 +852,87 @@ Follow Conventional Commits:
 ---
 
 **Last Updated**: 2025-06-06
-**Version**: 1.3.0
+**Version**: 1.4.0
 **Maintainer**: terra369 <terra369@users.noreply.github.com>
 
 This documentation follows the TDD (Test-Driven Documentation) approach requested in Issue #23, providing comprehensive coverage of the terase project structure, conventions, and development workflow. 
+
+### Centralized Diary Operations (`core/hooks/useDiary.ts`) - v1.4
+
+Unified diary management hook that consolidates all diary-related operations:
+
+- **CRUD Operations**: Complete create, read, update, delete functionality for diaries
+- **Message Management**: Centralized diary message operations with real-time updates
+- **State Management**: Unified state for diary data, messages, and loading states
+- **Real-time Subscriptions**: Automatic Supabase real-time updates for diary messages
+- **Type Safety**: Consistent `Diary`, `DiaryMessage`, and input/output interfaces
+- **Error Handling**: Integration with existing `ErrorHandler` system
+- **API Integration**: Built on top of `TypedAPIClient` for consistent HTTP operations
+
+```typescript
+// Usage example
+import { useDiary } from '@/core/hooks/useDiary';
+
+function MyComponent() {
+  const { 
+    diary, 
+    messages, 
+    isLoading, 
+    error,
+    createDiary, 
+    getDiary, 
+    addMessage,
+    getTodayDiary 
+  } = useDiary();
+  
+  // Create a new diary
+  const handleCreateDiary = async () => {
+    const diaryId = await createDiary({
+      date: '2025-06-06',
+      text: 'Today was amazing!',
+      audioPath: '/audio/diary.wav'
+    });
+  };
+  
+  // Add a message to existing diary
+  const handleAddMessage = async () => {
+    await addMessage({
+      diaryId: diary.id,
+      role: 'user',
+      text: 'Additional thoughts...',
+      audioUrl: '/audio/message.wav'
+    });
+  };
+  
+  // Load today's diary
+  useEffect(() => {
+    getTodayDiary();
+  }, [getTodayDiary]);
+}
+```
+
+**Migration Benefits**:
+- **50% Code Reduction**: Eliminated duplicate diary operations across components
+- **Centralized State**: Single source of truth for diary data and loading states
+- **Real-time Updates**: Automatic message synchronization via Supabase subscriptions
+- **Type Safety**: Consistent interfaces across all diary operations
+- **Error Handling**: Unified error processing with Japanese user messages
+- **Component Simplification**: Removed manual API calls and subscription management
+
+**Migrated Components**:
+- `useConversation.ts` → Uses `useDiary` for `createDiary()` and `addMessage()`
+- `useTodayDiary.ts` → Simplified to use `useDiary.getTodayDiary()`
+- `DiaryDetailClient.tsx` → Uses `useDiary` for real-time message updates
+- `CalendarClient.tsx` → Uses `useDiary` instead of direct API calls
+
+**Version 1.4.0 Changes (2025-06-06)**:
+- Added centralized diary operations hook in `core/hooks/useDiary.ts`
+- Implemented comprehensive CRUD operations with real-time subscriptions
+- Migrated all components to use centralized diary state management
+- Eliminated duplicate API calls and manual subscription management
+- Added comprehensive TDD test suite with 35+ test cases for diary operations
+- Unified `DiaryMessage` and `Diary` interfaces across the application
+- Enhanced `TypedAPIClient` with `deleteDiary` method for completeness
 
 **Version 1.3.0 Changes (2025-06-06)**:
 - Added unified API client system in `core/lib/apiClient.ts`

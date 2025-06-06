@@ -27,7 +27,7 @@ export default function CalendarClient() {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date())
   
   // Use centralized diary hook
-  const { diary, messages, isLoading, getDiary } = useDiary()
+  const { diary, messages, getDiary } = useDiary()
 
   const formattedDate = format(selectedDate, 'yyyy-MM-dd')
 
@@ -40,7 +40,13 @@ export default function CalendarClient() {
   const diaryData: DiaryData | null = diary ? {
     id: diary.id,
     date: diary.date,
-    messages: messages
+    messages: messages.map(msg => ({
+      id: msg.id,
+      role: msg.role,
+      text: msg.text,
+      audio_url: msg.audio_url || undefined,
+      created_at: msg.created_at
+    }))
   } : null
 
   const handleDateSelect = (date: Date) => {

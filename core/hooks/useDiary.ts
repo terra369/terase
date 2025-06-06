@@ -144,13 +144,13 @@ export function useDiary() {
         visibility: data.visibility || 'friends'
       });
 
-      if (response.diaryId) {
-        return response.diaryId;
+      if (response.data?.diaryId) {
+        return response.data.diaryId;
       } else {
         throw new Error('日記の作成に失敗しました');
       }
     } catch (err) {
-      const errorHandler = ErrorHandler.fromUnknown(err, 'diary');
+      const errorHandler = ErrorHandler.fromUnknown(err, 'unknown');
       errorHandler.log();
       setError(errorHandler.getUserMessage());
       throw err;
@@ -175,7 +175,7 @@ export function useDiary() {
         setDiary(prev => prev ? { ...prev, ...data } : null);
       }
     } catch (err) {
-      const errorHandler = ErrorHandler.fromUnknown(err, 'diary');
+      const errorHandler = ErrorHandler.fromUnknown(err, 'unknown');
       errorHandler.log();
       setError(errorHandler.getUserMessage());
       throw err;
@@ -203,7 +203,7 @@ export function useDiary() {
         }
       }
     } catch (err) {
-      const errorHandler = ErrorHandler.fromUnknown(err, 'diary');
+      const errorHandler = ErrorHandler.fromUnknown(err, 'unknown');
       errorHandler.log();
       setError(errorHandler.getUserMessage());
       throw err;
@@ -221,8 +221,8 @@ export function useDiary() {
     try {
       const response = await typedAPIClient.getDiary(date);
       
-      if (response) {
-        const { messages: diaryMessages, ...diaryData } = response;
+      if (response.data) {
+        const { messages: diaryMessages, ...diaryData } = response.data;
         setDiary(diaryData);
         setMessages(diaryMessages || []);
         currentDiaryRef.current = diaryData;
@@ -242,7 +242,7 @@ export function useDiary() {
         }
       }
     } catch (err) {
-      const errorHandler = ErrorHandler.fromUnknown(err, 'diary');
+      const errorHandler = ErrorHandler.fromUnknown(err, 'unknown');
       errorHandler.log();
       setError(errorHandler.getUserMessage());
     } finally {
@@ -271,7 +271,7 @@ export function useDiary() {
 
       // Real-time subscription will handle updating local state
     } catch (err) {
-      const errorHandler = ErrorHandler.fromUnknown(err, 'diary');
+      const errorHandler = ErrorHandler.fromUnknown(err, 'unknown');
       errorHandler.log();
       setError(errorHandler.getUserMessage());
       throw err;
