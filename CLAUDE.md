@@ -53,6 +53,10 @@
 
 ```
 terase/
+├── core/                      # Core shared functionality
+│   └── hooks/                 # Cross-platform hooks
+│       ├── useAudio.ts        # Unified audio recording interface
+│       └── useAudio.test.ts   # Tests for audio hook
 ├── public/                    # Static assets
 │   ├── file.svg
 │   ├── globe.svg
@@ -567,6 +571,55 @@ const { handleToggleRecording, isRecording, error } = useRecordingFlow({
 });
 ```
 
+### Core Audio Hook (`core/hooks/useAudio.ts`) - v1.2
+
+Unified audio recording interface for web and mobile platforms:
+
+- **Common Interface**: Provides consistent API across all platforms
+- **Platform Optimization**: Automatic device detection and MIME type selection
+- **Error Handling**: Integrated with centralized error handling system
+- **Resource Management**: Proper cleanup of audio resources and microphone access
+- **State Management**: Clear recording state and error feedback
+
+```typescript
+// Usage example
+import { useAudio } from '@/core/hooks/useAudio';
+
+function MyComponent() {
+  const { isRecording, error, startRecording, stopRecording, getAudioData } = useAudio();
+  
+  const handleRecord = async () => {
+    try {
+      await startRecording();
+      // Recording started
+    } catch (error) {
+      // Handle error
+    }
+  };
+  
+  const handleStop = async () => {
+    const audioBlob = await stopRecording();
+    // Process audio blob
+  };
+  
+  // Get current audio data without stopping
+  const currentData = getAudioData();
+}
+```
+
+**Migration from useRecorder**:
+The legacy `useRecorder` hook now acts as an adapter to `useAudio` for backward compatibility. New code should use `useAudio` directly:
+
+```typescript
+// Before (legacy)
+import { useRecorder } from '@/components/hooks/useRecorder';
+const { recording, start, stop, error } = useRecorder();
+
+// After (recommended)
+import { useAudio } from '@/core/hooks/useAudio';
+const { isRecording, startRecording, stopRecording, error } = useAudio();
+```
+
 ### Performance & Maintainability Benefits
 
 - **40% Code Reduction**: Eliminated duplicate logic across components
@@ -709,8 +762,14 @@ Follow Conventional Commits:
 
 ---
 
-**Last Updated**: 2025-06-05
-**Version**: 1.1.0
+**Last Updated**: 2025-06-06
+**Version**: 1.2.0
 **Maintainer**: terra369 <terra369@users.noreply.github.com>
 
-This documentation follows the TDD (Test-Driven Documentation) approach requested in Issue #23, providing comprehensive coverage of the terase project structure, conventions, and development workflow. Version 1.1.0 includes major architecture improvements with centralized error handling, device detection, API middleware, and audio system organization.
+This documentation follows the TDD (Test-Driven Documentation) approach requested in Issue #23, providing comprehensive coverage of the terase project structure, conventions, and development workflow. 
+
+**Version 1.2.0 Changes (2025-06-06)**:
+- Added unified audio recording interface in `core/hooks/useAudio.ts`
+- Migrated web recording logic to shared hook for cross-platform compatibility
+- Updated `useRecorder` to act as backward compatibility adapter
+- Comprehensive test coverage for audio recording functionality
