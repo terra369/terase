@@ -210,12 +210,12 @@ export class APIClient {
         data,
         url,
         userMessage: this.getErrorUserMessage(error.status, data),
-        isRetryable: this.config.retryConfig.retryCondition({ 
+        retryable: this.config.retryConfig.retryCondition({ 
           type: 'network', 
           message: '', 
           status: error.status,
           userMessage: '',
-          isRetryable: false,
+          retryable: false,
           originalError: error 
         }),
       };
@@ -231,11 +231,11 @@ export class APIClient {
         userMessage: isTimeoutError ? 
           'タイムアウトが発生しました。しばらく待ってから再試行してください。' :
           'ネットワークエラーが発生しました。接続を確認してください。',
-        isRetryable: !isTimeoutError && this.config.retryConfig.retryCondition({
+        retryable: !isTimeoutError && this.config.retryConfig.retryCondition({
           type: 'network',
           message: error.message,
           userMessage: '',
-          isRetryable: false,
+          retryable: false,
           originalError: error
         }),
       };
@@ -299,7 +299,7 @@ export class APIClient {
         lastError = error as APIError;
         
         // Don't retry on last attempt or if error is not retryable
-        if (attempt === maxAttempts || !lastError.isRetryable) {
+        if (attempt === maxAttempts || !lastError.retryable) {
           break;
         }
         
