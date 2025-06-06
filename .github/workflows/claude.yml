@@ -63,6 +63,6 @@ jobs:
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           model: "claude-opus-4-20250514"
-          allowed_tools: "Bash(npm:*)"
+          allowed_tools: "Bash(npm:*),Write,Read,Edit"
           log_artifacts: "logs"
 
