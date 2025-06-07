@@ -281,7 +281,7 @@ export function useDiary() {
   }, [getDiary]);
 
   // Add message to diary
-  const addMessage = useCallback(async (data: AddMessageData): Promise<void> => {
+  const addMessage = useCallback(async (data: AddMessageData): Promise<DiaryMessage | undefined> => {
     setError(null);
 
     // Setup AbortController for this operation
@@ -296,7 +296,20 @@ export function useDiary() {
         triggerAI: data.triggerAI || false
       });
 
-      // Real-time subscription will handle updating local state
+      // Since the API doesn't return the created message, we'll create a temporary one
+      // Real-time subscription will update with the actual message
+      const tempMessage: DiaryMessage = {
+        id: Date.now(), // Temporary ID
+        diary_id: data.diaryId,
+        role: data.role,
+        text: data.text,
+        audio_url: data.audioUrl || null,
+        created_at: new Date().toISOString()
+      };
+      
+      // Return the temporary message for immediate use
+      return tempMessage;
+      
     } catch (err) {
       const errorHandler = ErrorHandler.fromUnknown(err, 'network');
       errorHandler.log();
