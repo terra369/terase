@@ -32,7 +32,22 @@ describe('PWA Visual Assets', () => {
   });
 
   describe('Manifest.json Configuration', () => {
-    let manifest: any;
+    let manifest: {
+      theme_color?: string;
+      background_color?: string;
+      icons?: Array<{
+        src: string;
+        sizes: string;
+        type: string;
+        purpose?: string;
+      }>;
+      screenshots?: Array<{
+        src: string;
+        sizes: string;
+        type: string;
+        platform?: string;
+      }>;
+    };
 
     beforeAll(() => {
       const manifestPath = path.join(publicDir, 'manifest.json');
@@ -52,11 +67,11 @@ describe('PWA Visual Assets', () => {
     });
 
     it('should have maskable icon configured', () => {
-      const maskableIcon = manifest.icons?.find((icon: any) => 
+      const maskableIcon = manifest.icons?.find((icon) => 
         icon.purpose?.includes('maskable')
       );
       expect(maskableIcon).toBeDefined();
-      expect(maskableIcon.sizes).toMatch(/192x192|512x512/);
+      expect(maskableIcon?.sizes).toMatch(/192x192|512x512/);
     });
 
     it('should have screenshots configured', () => {
@@ -65,7 +80,7 @@ describe('PWA Visual Assets', () => {
       expect(manifest.screenshots.length).toBeGreaterThan(0);
       
       // Check screenshot structure
-      manifest.screenshots.forEach((screenshot: any) => {
+      manifest.screenshots?.forEach((screenshot) => {
         expect(screenshot).toHaveProperty('src');
         expect(screenshot).toHaveProperty('sizes');
         expect(screenshot).toHaveProperty('type');

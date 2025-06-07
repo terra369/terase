@@ -4,8 +4,8 @@
   "description": "虹色のJARVISスフィアと共に感謝を記録する音声日記アプリ",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#ffffff",
+  "background_color": "#000000",
+  "theme_color": "#000000",
   "orientation": "portrait",
   "scope": "/",
   "icons": [
@@ -24,6 +24,20 @@
       "src": "/icon-512x512.png",
       "sizes": "512x512",
       "type": "image/png"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshots/mobile-1.png",
+      "sizes": "1080x1920",
+      "type": "image/png",
+      "platform": "mobile"
+    },
+    {
+      "src": "/screenshots/mobile-2.png",
+      "sizes": "1080x1920", 
+      "type": "image/png",
+      "platform": "mobile"
     }
   ],
   "categories": ["lifestyle", "social"],

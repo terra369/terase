@@ -18,6 +18,17 @@ export const metadata: Metadata = {
   description: "A gratitude journal SNS with personal rainbow JARVIS companion",
   manifest: "/manifest.json",
   themeColor: "#000000",
+  icons: {
+    icon: "/favicon.ico",
+    apple: [
+      { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }
+    ],
+  },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black",
+    title: "terase",
+  },
 };
 
 export const viewport = "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no";
