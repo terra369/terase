@@ -39,6 +39,18 @@ jobs:
         run: npm ci
         continue-on-error: true
 
+      - name: Run Claude Code
+        id: claude
+        uses: anthropics/claude-code-action@beta
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          model: "claude-sonnet-4-20250514"
+          allowed_tools: "Bash,Read,Edit,Write,MultiEdit,Glob,Grep,LS"
+          custom_instructions: |
+            Follow the instructions in CLAUDE.md file for project-specific guidance.
+            Run npm run lint and npm run typecheck before committing any changes.
+          log_artifacts: logs
+
       - name: Run Lint
         run: npm run lint
         continue-on-error: true
@@ -58,13 +70,3 @@ jobs:
           name: logs
           path: ${{ runner.temp }}/_github_workflow/**
 
-      - name: Run Claude Code
-        id: claude
-        uses: anthropics/claude-code-action@beta
-        with:
-          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          model: "claude-sonnet-4-20250514"
-          allowed_tools: "Bash,Read,Edit,Write,MultiEdit,Glob,Grep,LS"
-          custom_instructions: |
-            Follow the instructions in CLAUDE.md file for project-specific guidance.
-            Run npm run lint and npm run typecheck before committing any changes.
