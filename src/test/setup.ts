@@ -1,5 +1,5 @@
-import '@testing-library/jest-dom'
 import { vi } from 'vitest'
+import '@testing-library/jest-dom/vitest'
 
 // Mock Supabase client
 vi.mock('@/lib/supabase/browser', () => ({
