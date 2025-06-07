@@ -63,5 +63,15 @@ jobs:
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           model: "claude-sonnet-4-20250514"
-          allowed_tools: "Bash(npm:*),Write,Read,Edit"
+          allowed_tools: |
+            Bash(git:*),
+            Bash(npm:*),
+            Bash(yarn:*),
+            Bash(pnpm:*),
+            Bash(grep:*),
+            Bash(ls:*),
+            Bash(cat:*),
+            Read,
+            Edit,
+            Write
           log_artifacts: "logs"
