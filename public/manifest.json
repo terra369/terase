@@ -4,8 +4,8 @@
   "description": "虹色のJARVISスフィアと共に感謝を記録する音声日記アプリ",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#1a1e27",
-  "theme_color": "#1a1e27",
+  "background_color": "#ecedf3",
+  "theme_color": "#ecedf3",
   "orientation": "portrait",
   "scope": "/",
   "icons": [
