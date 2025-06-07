@@ -114,4 +114,96 @@ describe('PWA Infrastructure', () => {
       expect(true).toBe(true); // Placeholder for now
     });
   });
+
+  describe('PWA Icons and Assets', () => {
+    it('should have PWA icons in proper directory structure', () => {
+      const iconsDir = path.join(process.cwd(), 'public', 'icons');
+      const requiredIcons = [
+        'icon-192x192.png',
+        'icon-512x512.png',
+        'icon-192x192-maskable.png',
+        'icon-512x512-maskable.png'
+      ];
+
+      requiredIcons.forEach(iconFile => {
+        const iconPath = path.join(iconsDir, iconFile);
+        expect(fs.existsSync(iconPath)).toBe(true);
+      });
+    });
+
+    it('should have proper maskable icon configuration in manifest', () => {
+      const manifestPath = path.join(process.cwd(), 'public', 'manifest.json');
+      const manifestContent = fs.readFileSync(manifestPath, 'utf-8');
+      const manifest = JSON.parse(manifestContent);
+
+      const maskableIcons = manifest.icons.filter((icon: any) => 
+        icon.purpose && icon.purpose.includes('maskable')
+      );
+      
+      expect(maskableIcons.length).toBeGreaterThan(0);
+    });
+
+    it('should have Apple Touch Icon', () => {
+      const appleTouchIconPath = path.join(process.cwd(), 'public', 'apple-touch-icon-180x180.png');
+      expect(fs.existsSync(appleTouchIconPath)).toBe(true);
+    });
+
+    it('should have screenshots configured in manifest', () => {
+      const manifestPath = path.join(process.cwd(), 'public', 'manifest.json');
+      const manifestContent = fs.readFileSync(manifestPath, 'utf-8');
+      const manifest = JSON.parse(manifestContent);
+
+      expect(manifest.screenshots).toBeDefined();
+      expect(Array.isArray(manifest.screenshots)).toBe(true);
+      expect(manifest.screenshots.length).toBeGreaterThan(0);
+    });
+  });
+
+  describe('Apple/iOS Support', () => {
+    it('should have Apple-specific meta tags in layout', () => {
+      const layoutPath = path.join(process.cwd(), 'src', 'app', 'layout.tsx');
+      const layoutContent = fs.readFileSync(layoutPath, 'utf-8');
+
+      // Check for Apple Touch Icon reference
+      expect(layoutContent).toContain('apple-touch-icon');
+      
+      // Check for Apple Web App Capable
+      expect(layoutContent).toContain('apple-mobile-web-app-capable');
+    });
+
+    it('should have proper theme color meta tags', () => {
+      const layoutPath = path.join(process.cwd(), 'src', 'app', 'layout.tsx');
+      const layoutContent = fs.readFileSync(layoutPath, 'utf-8');
+
+      expect(layoutContent).toContain('themeColor: "#000000"');
+    });
+  });
+
+  describe('Enhanced Manifest Configuration', () => {
+    it('should have proper color scheme', () => {
+      const manifestPath = path.join(process.cwd(), 'public', 'manifest.json');
+      const manifestContent = fs.readFileSync(manifestPath, 'utf-8');
+      const manifest = JSON.parse(manifestContent);
+
+      expect(manifest.theme_color).toBe('#000000');
+      expect(manifest.background_color).toBe('#000000');
+    });
+
+    it('should have all required PWA manifest properties', () => {
+      const manifestPath = path.join(process.cwd(), 'public', 'manifest.json');
+      const manifestContent = fs.readFileSync(manifestPath, 'utf-8');
+      const manifest = JSON.parse(manifestContent);
+
+      expect(manifest.name).toBeDefined();
+      expect(manifest.short_name).toBeDefined();
+      expect(manifest.description).toBeDefined();
+      expect(manifest.start_url).toBeDefined();
+      expect(manifest.display).toBeDefined();
+      expect(manifest.orientation).toBeDefined();
+      expect(manifest.scope).toBeDefined();
+      expect(manifest.lang).toBeDefined();
+      expect(manifest.dir).toBeDefined();
+      expect(manifest.categories).toBeDefined();
+    });
+  });
 });
