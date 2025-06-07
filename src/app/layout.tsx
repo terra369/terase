@@ -17,7 +17,7 @@ export const metadata: Metadata = {
   title: "terase - Voice Gratitude Journal",
   description: "A gratitude journal SNS with personal rainbow JARVIS companion",
   manifest: "/manifest.json",
-  themeColor: "#000000",
+  themeColor: "#1a1e27",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
