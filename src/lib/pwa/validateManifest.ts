@@ -16,8 +16,8 @@ export function validatePublicManifest() {
     if (!result.valid) {
       console.error('❌ manifest.json validation failed:');
       result.errors?.forEach((error) => {
-        if ('path' in error) {
-          console.error(`  - ${error.path.join('.')}: ${error.message}`);
+        if ('path' in error && error.path) {
+          console.error(`  - ${(error.path as (string | number)[]).join('.')}: ${error.message}`);
         } else {
           console.error(`  - ${error.message}`);
         }

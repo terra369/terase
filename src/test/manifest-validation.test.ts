@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { ManifestSchema, validateManifest, validateManifestJSON } from '../lib/pwa/manifestSchema';
+import { validateManifest, validateManifestJSON } from '../lib/pwa/manifestSchema';
 
 describe('Manifest Schema Validation', () => {
   describe('Valid Manifests', () => {
@@ -205,10 +205,10 @@ describe('Manifest Schema Validation', () => {
   });
 
   describe('Real manifest.json validation', () => {
-    it('should validate the actual public/manifest.json file', () => {
+    it('should validate the actual public/manifest.json file', async () => {
       // This test imports and validates the actual manifest file
-      const fs = require('fs');
-      const path = require('path');
+      const fs = await import('fs');
+      const path = await import('path');
       
       const manifestPath = path.join(process.cwd(), 'public', 'manifest.json');
       const manifestContent = fs.readFileSync(manifestPath, 'utf-8');

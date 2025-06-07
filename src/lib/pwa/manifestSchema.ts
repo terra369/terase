@@ -70,7 +70,7 @@ export function validateManifestJSON(jsonString: string): {
   try {
     const manifest = JSON.parse(jsonString);
     return validateManifest(manifest);
-  } catch (error) {
+  } catch {
     return { 
       valid: false, 
       errors: [{ message: 'Invalid JSON format' }] 
