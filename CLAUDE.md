@@ -1076,6 +1076,42 @@ The application now supports PWA functionality, enabling offline capabilities an
 - Service worker generation after build
 - Proper metadata integration in layout
 
+### PWA Visual Assets (Phase 2) - v1.6.1
+
+Enhanced PWA visual experience with proper icons and iOS support:
+
+**Visual Assets**:
+- **PWA Icons**: 192x192, 384x384, 512x512 PNG icons with the terase logo
+- **Apple Touch Icon**: 180x180 PNG icon for iOS home screen
+- **Maskable Icon**: 192x192 icon configured as "any maskable" for adaptive display
+- **App Screenshots**: Mobile screenshots (1080x1920) showcasing the app
+
+**iOS Support**:
+- **Apple Touch Icon**: Dedicated 180x180 icon for iOS devices
+- **Web App Capable**: Enabled full-screen mode on iOS (`apple-mobile-web-app-capable`)
+- **Status Bar Style**: Black status bar matching the app theme
+- **App Title**: Simplified "terase" for home screen display
+
+**Theme Configuration**:
+- **Theme Color**: #000000 (black) matching the JARVIS sphere aesthetic
+- **Background Color**: #000000 for seamless loading experience
+- **Consistent Theming**: All meta tags and manifest aligned with dark theme
+
+**Testing**: Test suite in `src/test/pwa-visual-assets.test.ts` validates:
+- Existence of all required icon files
+- Proper manifest.json configuration for theme and screenshots
+- iOS-specific meta tags in layout.tsx
+- Maskable icon configuration
+
+**Version 1.6.1 Changes (2025-06-07)**:
+- Implemented Phase 2 PWA visual assets (issue #100)
+- Generated apple-touch-icon (180x180) from existing icon
+- Added iOS-specific meta tags (apple-mobile-web-app-capable, status-bar-style)
+- Created placeholder screenshots for manifest.json
+- Updated manifest.json theme_color and background_color to #000000
+- Added comprehensive test suite for PWA visual assets
+- All tests passing with 100% coverage for PWA features
+
 **Version 1.6.0 Changes (2025-06-07)**:
 - Implemented Phase 1 PWA infrastructure with offline capabilities
 - Added Web App Manifest with Japanese localization
@@ -1120,5 +1156,5 @@ The application now supports PWA functionality, enabling offline capabilities an
 ---
 
 **Last Updated**: 2025-06-07
-**Version**: 1.6.0
+**Version**: 1.6.1
 **Maintainer**: terra369 <terra369@users.noreply.github.com>
