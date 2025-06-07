@@ -1,6 +1,8 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import * as fs from 'fs';
 import * as path from 'path';
+import sharp from 'sharp';
+import { validateManifestJSON } from '../lib/pwa/validateManifest';
 
 describe('PWA Visual Assets', () => {
   const publicDir = path.join(process.cwd(), 'public');
@@ -55,6 +57,16 @@ describe('PWA Visual Assets', () => {
       manifest = JSON.parse(manifestContent);
     });
 
+    it('should pass Zod schema validation', () => {
+      const manifestPath = path.join(publicDir, 'manifest.json');
+      const manifestContent = fs.readFileSync(manifestPath, 'utf-8');
+      const validationResult = validateManifestJSON(manifestContent);
+      
+      expect(validationResult.valid).toBe(true);
+      expect(validationResult.errors).toBeUndefined();
+      expect(validationResult.data).toBeDefined();
+    });
+
     it('should have theme_color matching the app theme', () => {
       expect(manifest.theme_color).toBeDefined();
       // Should match the mobile app background color
@@ -84,7 +96,66 @@ describe('PWA Visual Assets', () => {
         expect(screenshot).toHaveProperty('src');
         expect(screenshot).toHaveProperty('sizes');
         expect(screenshot).toHaveProperty('type');
+        // Validate size format
+        expect(screenshot.sizes).toMatch(/^\d+x\d+$/);
       });
+    });
+  });
+
+  describe('Screenshot Validation', () => {
+    it('should have proper screenshot dimensions', async () => {
+      const screenshotPath = path.join(publicDir, 'screenshots/mobile-1.png');
+      
+      // Check if screenshot exists
+      expect(fs.existsSync(screenshotPath)).toBe(true);
+      
+      // Verify image dimensions using sharp
+      const metadata = await sharp(screenshotPath).metadata();
+      expect(metadata.width).toBe(1080);
+      expect(metadata.height).toBe(1920);
+      expect(metadata.format).toBe('png');
+    });
+
+    it('should have all screenshots with correct dimensions', async () => {
+      const screenshotDir = path.join(publicDir, 'screenshots');
+      const screenshots = fs.readdirSync(screenshotDir)
+        .filter(file => file.endsWith('.png'));
+      
+      expect(screenshots.length).toBeGreaterThan(0);
+      
+      // Check each screenshot
+      for (const screenshot of screenshots) {
+        const screenshotPath = path.join(screenshotDir, screenshot);
+        const metadata = await sharp(screenshotPath).metadata();
+        
+        // Mobile screenshots should be 1080x1920
+        if (screenshot.includes('mobile')) {
+          expect(metadata.width).toBe(1080);
+          expect(metadata.height).toBe(1920);
+        }
+        
+        expect(metadata.format).toBe('png');
+      }
+    });
+
+    it('should have valid PWA icon dimensions', async () => {
+      const iconTests = [
+        { file: 'icon-192x192.png', width: 192, height: 192 },
+        { file: 'icon-384x384.png', width: 384, height: 384 },
+        { file: 'icon-512x512.png', width: 512, height: 512 },
+        { file: 'apple-touch-icon.png', width: 180, height: 180 }
+      ];
+      
+      for (const { file, width, height } of iconTests) {
+        const iconPath = path.join(publicDir, file);
+        
+        if (fs.existsSync(iconPath)) {
+          const metadata = await sharp(iconPath).metadata();
+          expect(metadata.width).toBe(width);
+          expect(metadata.height).toBe(height);
+          expect(metadata.format).toBe('png');
+        }
+      }
     });
   });
 

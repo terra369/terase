@@ -1,7 +1,9 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import fs from 'fs';
 import path from 'path';
+import { validateManifestJSON } from '../lib/pwa/validateManifest';
 
+// Using the Zod-inferred type would be ideal, but keeping backward compatibility
 interface WebAppManifest {
   name: string;
   short_name: string;
@@ -37,13 +39,24 @@ describe('PWA Infrastructure', () => {
       expect(manifest).toBeDefined();
     });
 
+    it('should pass Zod schema validation', () => {
+      const manifestPath = path.join(process.cwd(), 'public', 'manifest.json');
+      const manifestContent = fs.readFileSync(manifestPath, 'utf-8');
+      const validationResult = validateManifestJSON(manifestContent);
+      
+      expect(validationResult.valid).toBe(true);
+      if (!validationResult.valid) {
+        console.error('Manifest validation errors:', validationResult.errors);
+      }
+    });
+
     it('should have required manifest properties', () => {
       expect(manifest.name).toBe('terase - 感謝日記');
       expect(manifest.short_name).toBe('terase');
       expect(manifest.start_url).toBe('/');
       expect(manifest.display).toBe('standalone');
-      expect(manifest.theme_color).toBe('#000000');
-      expect(manifest.background_color).toBe('#000000');
+      expect(manifest.theme_color).toBe('#ecedf3');
+      expect(manifest.background_color).toBe('#ecedf3');
     });
 
     it('should have proper icon configurations', () => {
@@ -102,7 +115,7 @@ describe('PWA Infrastructure', () => {
       const layoutContent = fs.readFileSync(layoutPath, 'utf-8');
       
       expect(layoutContent).toContain('manifest: "/manifest.json"');
-      expect(layoutContent).toContain('themeColor: "#000000"');
+      expect(layoutContent).toContain('themeColor: "#ecedf3"');
     });
   });
 
