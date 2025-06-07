@@ -57,13 +57,13 @@ describe('PWA Visual Assets', () => {
 
     it('should have theme_color matching the app theme', () => {
       expect(manifest.theme_color).toBeDefined();
-      // Should match the rainbow/black theme of the app
-      expect(manifest.theme_color).toBe('#000000');
+      // Should match the mobile app background color
+      expect(manifest.theme_color).toBe('#ecedf3');
     });
 
     it('should have proper background_color', () => {
       expect(manifest.background_color).toBeDefined();
-      expect(manifest.background_color).toBe('#000000');
+      expect(manifest.background_color).toBe('#ecedf3');
     });
 
     it('should have maskable icon configured', () => {
@@ -110,7 +110,7 @@ describe('PWA Visual Assets', () => {
       const layoutContent = fs.readFileSync(layoutPath, 'utf-8');
       
       // Check for status bar style in metadata
-      expect(layoutContent).toMatch(/appleWebApp:\s*{[\s\S]*?statusBarStyle:\s*['"]black['"]/);
+      expect(layoutContent).toMatch(/appleWebApp:\s*{[\s\S]*?statusBarStyle:\s*['"]default['"]/);
     });
 
     it('should have theme-color meta tag matching app theme', () => {
@@ -118,7 +118,7 @@ describe('PWA Visual Assets', () => {
       const layoutContent = fs.readFileSync(layoutPath, 'utf-8');
       
       // Check for theme color in metadata
-      expect(layoutContent).toMatch(/themeColor:\s*['"]#000000['"]/);
+      expect(layoutContent).toMatch(/themeColor:\s*['"]#ecedf3['"]/);
     });
   });
 });
