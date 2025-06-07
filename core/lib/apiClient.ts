@@ -521,6 +521,10 @@ export class TypedAPIClient {
   async saveDiary(data: any) {
     return this.client.post(APIEndpoints.actions.saveDiary(), { data });
   }
+  
+  async deleteDiary(diaryId: number) {
+    return this.client.delete(`/api/diaries/${diaryId}`);
+  }
 }
 
 /**
