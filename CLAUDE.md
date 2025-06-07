@@ -1032,6 +1032,58 @@ const { sendMessage, isProcessing, error } = useDiaryMessage();
 await sendMessage({ audioBlob });
 ```
 
+### Progressive Web App (PWA) Infrastructure - v1.6
+
+The application now supports PWA functionality, enabling offline capabilities and installability:
+
+**Core PWA Features**:
+- **Offline Support**: Service worker caches critical resources for offline access
+- **App Installation**: Users can install terase as a native-like app on their devices
+- **Automatic Updates**: Service worker updates automatically with skipWaiting enabled
+- **Optimized Caching**: Strategic caching for different resource types (fonts, images, audio, API)
+
+**Implementation Details**:
+
+1. **Web App Manifest** (`public/manifest.json`):
+   - Japanese language support with name "terase - 感謝日記"
+   - Portrait orientation optimized for mobile journaling
+   - Black theme matching the app's aesthetic
+   - Multiple icon sizes for various device requirements
+
+2. **Service Worker Configuration** (`next.config.ts`):
+   - Powered by `next-pwa` with Workbox integration
+   - Runtime caching strategies:
+     - **CacheFirst**: Fonts, static resources, audio/video files
+     - **StaleWhileRevalidate**: Images, JS/CSS, Supabase storage
+     - **NetworkFirst**: API calls with 10-second timeout fallback
+   - Disabled in development for easier debugging
+
+3. **Caching Strategies**:
+   ```javascript
+   // Google Fonts - Cache for 1 year
+   urlPattern: /^https:\/\/fonts\.(?:googleapis|gstatic)\.com\/.*/i
+   
+   // Supabase Storage - Cache for 1 week
+   urlPattern: /^https?:\/\/.*\.supabase\.co\/storage\/v1\/.*/i
+   
+   // API Calls - Network first with cache fallback
+   urlPattern: /\/api\/.*/i
+   ```
+
+**Testing**: Comprehensive test suite in `src/test/pwa.test.ts` validates:
+- Manifest file structure and required properties
+- PWA configuration in Next.js config
+- Service worker generation after build
+- Proper metadata integration in layout
+
+**Version 1.6.0 Changes (2025-06-07)**:
+- Implemented Phase 1 PWA infrastructure with offline capabilities
+- Added Web App Manifest with Japanese localization
+- Configured service worker with strategic caching for all resource types
+- Integrated `next-pwa` with comprehensive Workbox runtime caching
+- Created PWA test suite for validation
+- Fixed PostCSS configuration for Tailwind CSS 4 compatibility
+
 **Version 1.5.0 Changes (2025-06-07)**:
 - Added unified diary message processing hook in `core/hooks/useDiaryMessage.ts`
 - Consolidated user message → AI response flow into single interface
@@ -1064,3 +1116,9 @@ await sendMessage({ audioBlob });
 - Migrated web recording logic to shared hook for cross-platform compatibility
 - Updated `useRecorder` to act as backward compatibility adapter
 - Comprehensive test coverage for audio recording functionality
+
+---
+
+**Last Updated**: 2025-06-07
+**Version**: 1.6.0
+**Maintainer**: terra369 <terra369@users.noreply.github.com>

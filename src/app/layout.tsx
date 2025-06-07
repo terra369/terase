@@ -16,6 +16,8 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "terase - Voice Gratitude Journal",
   description: "A gratitude journal SNS with personal rainbow JARVIS companion",
+  manifest: "/manifest.json",
+  themeColor: "#000000",
 };
 
 export const viewport = "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no";
