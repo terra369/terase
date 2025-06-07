@@ -167,8 +167,9 @@ describe('PWA Infrastructure', () => {
       // Check for Apple Touch Icon reference
       expect(layoutContent).toContain('apple-touch-icon');
       
-      // Check for Apple Web App Capable
-      expect(layoutContent).toContain('apple-mobile-web-app-capable');
+      // Check for Apple Web App Capable (Next.js metadata API)
+      expect(layoutContent).toContain('appleWebApp');
+      expect(layoutContent).toContain('capable: true');
     });
 
     it('should have proper theme color meta tags', () => {
