@@ -61,7 +61,9 @@ terase/
 │       ├── useAudio.ts        # Unified audio recording interface
 │       ├── useAudio.test.ts   # Tests for audio hook
 │       ├── useDiary.ts        # Centralized diary operations hook
-│       └── useDiary.test.ts   # Tests for diary hook
+│       ├── useDiary.test.ts   # Tests for diary hook
+│       ├── useDiaryMessage.ts # Unified message processing hook
+│       └── useDiaryMessage.test.ts # Tests for message processing
 ├── public/                    # Static assets
 │   ├── file.svg
 │   ├── globe.svg
@@ -851,8 +853,8 @@ Follow Conventional Commits:
 
 ---
 
-**Last Updated**: 2025-06-06
-**Version**: 1.4.0
+**Last Updated**: 2025-06-07
+**Version**: 1.5.0
 **Maintainer**: terra369 <terra369@users.noreply.github.com>
 
 This documentation follows the TDD (Test-Driven Documentation) approach requested in Issue #23, providing comprehensive coverage of the terase project structure, conventions, and development workflow. 
@@ -924,6 +926,119 @@ function MyComponent() {
 - `useTodayDiary.ts` → Simplified to use `useDiary.getTodayDiary()`
 - `DiaryDetailClient.tsx` → Uses `useDiary` for real-time message updates
 - `CalendarClient.tsx` → Uses `useDiary` instead of direct API calls
+
+**Version 1.4.0 Changes (2025-06-06)**:
+- Added centralized diary operations hook in `core/hooks/useDiary.ts`
+- Implemented comprehensive CRUD operations with real-time subscriptions
+- Migrated all components to use centralized diary state management
+- Eliminated duplicate API calls and manual subscription management
+- Added comprehensive TDD test suite with 35+ test cases for diary operations
+- Unified `DiaryMessage` and `Diary` interfaces across the application
+- Enhanced `TypedAPIClient` with `deleteDiary` method for completeness
+
+**Version 1.3.0 Changes (2025-06-06)**:
+- Added unified API client system in `core/lib/apiClient.ts`
+- Implemented type-safe HTTP methods with comprehensive error handling
+- Added retry logic with exponential backoff and configurable conditions
+- Integrated with existing ErrorHandler system for consistent error processing
+- Provided request/response interceptors for extensibility
+- Added authentication support and timeout management
+- Included TypedAPIClient with predefined endpoint methods
+- Created comprehensive TDD test suite with 35+ test cases
+
+### Unified Diary Message Processing (`core/hooks/useDiaryMessage.ts`) - v1.5
+
+Consolidated diary message processing hook that unifies the complete flow from user input to AI response:
+
+- **Complete Message Flow**: Handles audio transcription, message creation, AI response generation, and TTS in one interface
+- **State Management**: Centralized processing state, error handling, and AI response tracking
+- **Audio Support**: Seamless integration with audio recording, transcription, and TTS generation
+- **Error Handling**: Comprehensive error management with Japanese user messages throughout the flow
+- **Flexibility**: Support for both audio and text messages with optional features
+- **Integration**: Built on top of `useDiary` and `typedAPIClient` for consistency
+
+```typescript
+// Usage example
+import { useDiaryMessage } from '@/core/hooks/useDiaryMessage';
+
+function ConversationComponent() {
+  const {
+    sendMessage,
+    isProcessing,
+    error,
+    lastAIResponse,
+    diary,
+    messages,
+    clearError
+  } = useDiaryMessage();
+  
+  // Send audio message
+  const handleAudioMessage = async (audioBlob: Blob) => {
+    const result = await sendMessage({
+      audioBlob,
+      diaryId: diary?.id,
+      uploadAudio: true,
+      generateTTS: true
+    });
+    
+    // Play AI response
+    if (lastAIResponse?.audioData) {
+      playAudio(lastAIResponse.audioData);
+    }
+  };
+  
+  // Send text message
+  const handleTextMessage = async (text: string) => {
+    await sendMessage({
+      text,
+      diaryId: diary?.id,
+      generateTTS: false
+    });
+  };
+  
+  // Error handling
+  if (error) {
+    return <ErrorMessage message={error.getUserMessage()} onRetry={clearError} />;
+  }
+  
+  return (
+    <div>
+      {isProcessing && <LoadingIndicator />}
+      {/* UI components */}
+    </div>
+  );
+}
+```
+
+**Key Features**:
+- **Unified Interface**: Single `sendMessage` method handles all message processing steps
+- **Audio Processing**: Automatic transcription of audio blobs with optional upload
+- **AI Integration**: Seamless AI response generation with conversation context
+- **TTS Support**: Optional text-to-speech generation for AI responses
+- **Error Recovery**: Clear error states with retry capabilities
+- **Real-time Updates**: Integrated with `useDiary` for automatic message synchronization
+
+**Migration Path**:
+```typescript
+// Before: Multiple hooks and manual orchestration
+const { recording, start, stop } = useRecorder();
+const { processConversation } = useConversation();
+const { createDiary, addMessage } = useDiary();
+
+// Complex flow management...
+
+// After: Single unified hook
+const { sendMessage, isProcessing, error } = useDiaryMessage();
+await sendMessage({ audioBlob });
+```
+
+**Version 1.5.0 Changes (2025-06-07)**:
+- Added unified diary message processing hook in `core/hooks/useDiaryMessage.ts`
+- Consolidated user message → AI response flow into single interface
+- Integrated audio transcription, message creation, and TTS generation
+- Comprehensive error handling throughout the message flow
+- TDD approach with complete test coverage for all scenarios
+- Simplified component implementation by removing manual flow orchestration
 
 **Version 1.4.0 Changes (2025-06-06)**:
 - Added centralized diary operations hook in `core/hooks/useDiary.ts`

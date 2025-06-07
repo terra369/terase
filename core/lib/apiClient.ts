@@ -506,15 +506,18 @@ export class TypedAPIClient {
   
   // AI endpoints
   async chatWithAI(data: any) {
-    return this.client.post(APIEndpoints.ai.chat(), { data });
+    const response = await this.client.post(APIEndpoints.ai.chat(), { data });
+    return response.data;
   }
   
   async transcribeAudio(formData: FormData) {
-    return this.client.post(APIEndpoints.ai.transcribe(), { data: formData });
+    const response = await this.client.post(APIEndpoints.ai.transcribe(), { data: formData });
+    return response.data;
   }
   
   async textToSpeech(data: any) {
-    return this.client.post(APIEndpoints.ai.tts(), { data });
+    const response = await this.client.post(APIEndpoints.ai.tts(), { data });
+    return response.data;
   }
   
   // Action endpoints
