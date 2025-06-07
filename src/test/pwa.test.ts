@@ -136,7 +136,7 @@ describe('PWA Infrastructure', () => {
       const manifestContent = fs.readFileSync(manifestPath, 'utf-8');
       const manifest = JSON.parse(manifestContent);
 
-      const maskableIcons = manifest.icons.filter((icon: any) => 
+      const maskableIcons = manifest.icons.filter((icon) => 
         icon.purpose && icon.purpose.includes('maskable')
       );
       

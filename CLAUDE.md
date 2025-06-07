@@ -1070,11 +1070,71 @@ The application now supports PWA functionality, enabling offline capabilities an
    urlPattern: /\/api\/.*/i
    ```
 
+**PWA Phase 2 - Icons and Visual Assets** (v1.7.0):
+
+**Enhanced Icon Structure**:
+- **PWA Icons Directory**: `public/icons/` contains optimized PWA icons:
+  - `icon-192x192.png` - Standard PWA icon (192x192)
+  - `icon-512x512.png` - Large PWA icon (512x512)
+  - `icon-192x192-maskable.png` - Maskable variant for adaptive icons
+  - `icon-512x512-maskable.png` - Large maskable variant
+- **Apple Touch Icon**: `apple-touch-icon-180x180.png` for iOS home screen
+- **Favicon**: Updated favicon.ico with current rainbow sphere design
+
+**Enhanced Manifest Configuration**:
+```json
+{
+  "theme_color": "#000000",
+  "background_color": "#000000",
+  "icons": [
+    {
+      "src": "/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-192x192-maskable.png",
+      "sizes": "192x192", 
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshots/desktop-1.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide"
+    }
+  ]
+}
+```
+
+**Apple/iOS Support**:
+- **Apple Web App Meta Tags**: Configured via Next.js metadata API
+- **iOS Status Bar**: Optimized for standalone web app mode
+- **Apple Touch Icon**: High-resolution 180x180 icon for iOS devices
+- **Web App Capable**: Enables full-screen standalone mode on iOS
+
 **Testing**: Comprehensive test suite in `src/test/pwa.test.ts` validates:
 - Manifest file structure and required properties
 - PWA configuration in Next.js config
 - Service worker generation after build
 - Proper metadata integration in layout
+- PWA icons directory structure with maskable variants
+- Apple Touch Icon existence and proper configuration
+- Enhanced manifest screenshots and visual settings
+
+**Version 1.7.0 Changes (2025-06-07)**:
+- Implemented Phase 2 PWA icons and visual assets with TDD approach
+- Created `public/icons/` directory with PWA-optimized icon structure
+- Added maskable icon variants (192x192, 512x512) for adaptive icon support
+- Implemented Apple Touch Icon (180x180) for iOS home screen integration
+- Enhanced manifest.json with proper theme colors (#000000) and screenshots configuration
+- Added Apple/iOS meta tag support via Next.js metadata API (appleWebApp)
+- Updated comprehensive PWA test suite with 17 test cases covering all new features
+- Follows complete TDD methodology: tests written first, then implementation
 
 **Version 1.6.0 Changes (2025-06-07)**:
 - Implemented Phase 1 PWA infrastructure with offline capabilities
@@ -1120,5 +1180,5 @@ The application now supports PWA functionality, enabling offline capabilities an
 ---
 
 **Last Updated**: 2025-06-07
-**Version**: 1.6.0
+**Version**: 1.7.0
 **Maintainer**: terra369 <terra369@users.noreply.github.com>
