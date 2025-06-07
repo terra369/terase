@@ -74,4 +74,3 @@ jobs:
             Read,
             Edit,
             Write
-          log_artifacts: "logs"
