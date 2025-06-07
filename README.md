@@ -85,25 +85,21 @@ Supabase migrations live under `supabase/migrations` and are version‑controlle
 ## 🏛️ Architecture Highlights
 
 ### 🛡️ Error Handling
-
 - **Centralized system** with Japanese user messages
 - **9 error types** (recording, AI, network, etc.)
 - **Automatic retry logic** based on error classification
 
 ### 📱 Device Detection  
-
 - **Cross-platform compatibility** with iOS Safari optimizations
 - **Audio optimization** with device-specific MIME types
 - **User gesture detection** for audio playback requirements
 
 ### 🔗 API Infrastructure
-
 - **Standardized middleware** for auth, CORS, and validation
 - **Zod schemas** for type-safe input validation
 - **Consistent responses** across all endpoints
 
 ### 🎵 Audio System
-
 - **Modular organization** with barrel exports
 - **Shared components** for recording workflows
 - **Performance optimizations** for mobile devices
@@ -121,5 +117,4 @@ Supabase migrations live under `supabase/migrations` and are version‑controlle
 
 ## 📄 License
 
-test
 MIT © 2025 terase / terra369
